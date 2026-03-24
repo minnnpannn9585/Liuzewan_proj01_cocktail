@@ -1,32 +1,32 @@
 using UnityEngine;
 
-// 鸡尾酒类（独立文件）
+// 鸡尾酒类（新增浓稠度）
 public class Cocktail
 {
-    public int strong;   // 浓烈度
+    public int strong;   // 烈度
     public int bitter;   // 苦度
-    public int sour;     // 酸度
-    public string[] steps; // 步骤记录
+    public int thick;    // 浓稠度（新增）
+    public string[] steps; // 步骤记录（8步）
 
     public Cocktail()
     {
         strong = 0;
         bitter = 0;
-        sour = 0;
-        steps = new string[5]; // 5个步骤
+        thick = 0; // 初始化浓稠度
+        steps = new string[8]; // 步骤数适配新流程
     }
 
-    // 添加物品属性
+    // 添加物品属性（新增浓稠度）
     public void AddItemAttributes(ItemData item)
     {
         strong += item.strongValue;
         bitter += item.bitterValue;
-        sour += item.sourValue;
+        thick += item.thickValue; // 累加浓稠度
 
         // 确保属性非负
         strong = Mathf.Max(0, strong);
         bitter = Mathf.Max(0, bitter);
-        sour = Mathf.Max(0, sour);
+        thick = Mathf.Max(0, thick);
     }
 
     // 记录步骤

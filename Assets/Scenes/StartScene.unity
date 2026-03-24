@@ -368,6 +368,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 906acc95fa277408e9b885a8c8ac3ae2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  animationDuration: 2
 --- !u!1 &1254086951
 GameObject:
   m_ObjectHideFlags: 0
@@ -543,11 +544,134 @@ MonoBehaviour:
   m_GameObject: {fileID: 1453926571}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b41747d68911c4df0a5fead524614699, type: 3}
+  m_Script: {fileID: 11500000, guid: d779a41aedfa14154b58795800879b2d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  allItems: []
+  allItems:
+  - itemName: glass01
+    itemType: 0
+    strongValue: 0
+    bitterValue: 0
+    thickValue: 0
+    description: 
+    itemSprite: {fileID: 0}
+  - itemName: glass02
+    itemType: 0
+    strongValue: 0
+    bitterValue: 0
+    thickValue: 0
+    description: 
+    itemSprite: {fileID: 0}
+  - itemName: base01
+    itemType: 1
+    strongValue: 1
+    bitterValue: 1
+    thickValue: 1
+    description: 
+    itemSprite: {fileID: 0}
+  - itemName: base02
+    itemType: 1
+    strongValue: 3
+    bitterValue: 3
+    thickValue: 3
+    description: 
+    itemSprite: {fileID: 0}
+  - itemName: add01
+    itemType: 2
+    strongValue: 3
+    bitterValue: 3
+    thickValue: 3
+    description: 
+    itemSprite: {fileID: 0}
+  - itemName: add02
+    itemType: 2
+    strongValue: 3
+    bitterValue: 3
+    thickValue: 3
+    description: 
+    itemSprite: {fileID: 0}
+  - itemName: magic01
+    itemType: 3
+    strongValue: 3
+    bitterValue: 3
+    thickValue: 3
+    description: 
+    itemSprite: {fileID: 0}
+  - itemName: magic02
+    itemType: 3
+    strongValue: 3
+    bitterValue: 3
+    thickValue: 3
+    description: 
+    itemSprite: {fileID: 0}
+  - itemName: magic03
+    itemType: 3
+    strongValue: 3
+    bitterValue: 3
+    thickValue: 3
+    description: 
+    itemSprite: {fileID: 0}
+  - itemName: deco01
+    itemType: 4
+    strongValue: 3
+    bitterValue: 3
+    thickValue: 3
+    description: 
+    itemSprite: {fileID: 0}
+  - itemName: deco02
+    itemType: 4
+    strongValue: 3
+    bitterValue: 3
+    thickValue: 3
+    description: 
+    itemSprite: {fileID: 0}
+  - itemName: addProc01
+    itemType: 5
+    strongValue: 3
+    bitterValue: 3
+    thickValue: 3
+    description: 
+    itemSprite: {fileID: 0}
+  - itemName: addProc02
+    itemType: 5
+    strongValue: 3
+    bitterValue: 3
+    thickValue: 3
+    description: 
+    itemSprite: {fileID: 0}
+  - itemName: magicProc01
+    itemType: 6
+    strongValue: 3
+    bitterValue: 3
+    thickValue: 3
+    description: 
+    itemSprite: {fileID: 0}
+  - itemName: magicProc02
+    itemType: 6
+    strongValue: 3
+    bitterValue: 3
+    thickValue: 3
+    description: 
+    itemSprite: {fileID: 0}
   currentStep: 0
+  isWin: 0
+  errorValues: 
+  tempSelectedAdditive:
+    itemName: 
+    itemType: 0
+    strongValue: 0
+    bitterValue: 0
+    thickValue: 0
+    description: 
+    itemSprite: {fileID: 0}
+  tempSelectedMagic:
+    itemName: 
+    itemType: 0
+    strongValue: 0
+    bitterValue: 0
+    thickValue: 0
+    description: 
+    itemSprite: {fileID: 0}
 --- !u!1 &1565365465
 GameObject:
   m_ObjectHideFlags: 0

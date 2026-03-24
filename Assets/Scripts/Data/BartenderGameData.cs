@@ -5,15 +5,19 @@ public class BartenderGameData : MonoBehaviour
 {
     public static BartenderGameData Instance;
 
-    // 所有物品数据（public，可在Inspector配置）
+    // 所有物品数据
     public List<ItemData> allItems = new List<ItemData>();
 
-    // 当前游戏状态数据（public，其他脚本可直接访问）
+    // 当前游戏状态
     public Cocktail currentCocktail;
     public Customer currentCustomer;
-    public int currentStep = 0; // 0:开始 1:选酒杯 2:选基酒 3:选辅料 4:选加工 5:选操作 6:结果
+    public int currentStep = 0; // 0:主菜单 1:过场动画 2:选杯子 3:选基酒 4:选辅料 5:辅料加工 6:选魔法材料 7:魔法操作 8:选装饰 9:判定结果
     public bool isWin;
-    public int[] errorValues; // [strongDiff, bitterDiff, sourDiff]
+    public int[] errorValues; // [strongDiff, bitterDiff, thickDiff]（新增浓稠度误差）
+
+    // 临时存储选中的辅料/魔法材料（用于加工/操作后累加属性）
+    public ItemData tempSelectedAdditive;
+    public ItemData tempSelectedMagic;
 
     private void Awake()
     {
@@ -26,12 +30,10 @@ public class BartenderGameData : MonoBehaviour
         {
             Destroy(gameObject);
         }
-
-        // 初始化鸡尾酒
         currentCocktail = new Cocktail();
     }
 
-    // 根据类型获取物品列表（public，其他脚本可调用）
+    // 根据类型获取物品列表
     public List<ItemData> GetItemsByType(ItemType type)
     {
         List<ItemData> result = new List<ItemData>();
