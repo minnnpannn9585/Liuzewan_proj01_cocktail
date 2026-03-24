@@ -10,22 +10,25 @@ public class UIManager : MonoBehaviour
     public static UIManager Instance;
 
     [Header("General UI")]
-    public TextMeshProUGUI stepText;          
-    public TextMeshProUGUI customerNameText;  
+    public TextMeshProUGUI stepText;
+    public TextMeshProUGUI customerNameText;
     public TextMeshProUGUI customerDemandText;
-    public Image customerAvatar;   
-    public Transform itemButtonParent; 
+    public Image customerAvatar;
+    public Transform itemButtonParent;
     public GameObject itemButtonPrefab;
 
+    [Header("Dialogue UI")]
+    public DialogueController dialogueController;
+
     [Header("Popup Panels")]
-    public GameObject additiveProcessPanel; 
-    public GameObject magicProcessPanel;    
-    public Transform additiveProcessParent; 
+    public GameObject additiveProcessPanel;
+    public GameObject magicProcessPanel;
+    public Transform additiveProcessParent;
     public Transform magicProcessParent;
 
     [Header("Result Screen UI")]
-    public TextMeshProUGUI resultText;        
-    public TextMeshProUGUI detailText;        
+    public TextMeshProUGUI resultText;
+    public TextMeshProUGUI detailText;
 
     private void Awake()
     {
@@ -37,9 +40,13 @@ public class UIManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
+
         // Hide popups on init
         if (additiveProcessPanel != null) additiveProcessPanel.SetActive(false);
         if (magicProcessPanel != null) magicProcessPanel.SetActive(false);
+
+        if (dialogueController != null)
+            dialogueController.gameObject.SetActive(true); // controller 自己会 Hide 面板
     }
 
     private void Start()
@@ -60,66 +67,82 @@ public class UIManager : MonoBehaviour
         Customer customer = BartenderGameData.Instance.currentCustomer;
         customerNameText.text = $"Customer: {customer.name}";
         customerDemandText.text = $"Requirements: Alcohol {customer.needStrong} | Bitterness {customer.needBitter} | Thickness {customer.needThick}";
-        
+
         // Init step UI if already in gameplay
-        if (BartenderGameData.Instance.currentStep >= 2)
+        if (BartenderGameData.Instance.currentStep >= 3)
         {
             UpdateStepUI(BartenderGameData.Instance.currentStep);
+        }
+    }
+
+    public void StartDialogue(System.Action onFinished)
+    {
+        // 对话期间隐藏可交互物品按钮
+        ClearAllItemButtons(itemButtonParent);
+        if (additiveProcessPanel != null) additiveProcessPanel.SetActive(false);
+        if (magicProcessPanel != null) magicProcessPanel.SetActive(false);
+
+        stepText.text = "Current Step: Dialogue";
+
+        if (dialogueController != null)
+        {
+            dialogueController.PlayConfigured(onFinished);
+        }
+        else
+        {
+            // 没绑定对话控制器就直接跳过，避免卡死
+            onFinished?.Invoke();
         }
     }
 
     // Update Step UI
     public void UpdateStepUI(int step)
     {
-        // Hide all popups
         if (additiveProcessPanel != null) additiveProcessPanel.SetActive(false);
         if (magicProcessPanel != null) magicProcessPanel.SetActive(false);
 
-        // Clear existing buttons
         ClearAllItemButtons(itemButtonParent);
 
-        // Step name config (Full English)
-        string[] stepNames = { 
-            "Main Menu", "Cutscene", "Select Glass", "Select Base Liquor", "Select Additives", 
-            "Process Additives", "Select Magic Ingredients", "Process Magic Mix", "Select Decoration" 
-        };
-        stepText.text = $"Current Step: {stepNames[step]}";
-
-        // Map step to item type
-        ItemType[] stepItemTypes = { 
-            ItemType.Glass, ItemType.BaseLiquor, ItemType.Additive, 
-            ItemType.AdditiveProcess, ItemType.MagicMaterial, 
-            ItemType.MagicProcess, ItemType.Decoration 
+        string[] stepNames = {
+            "Main Menu", "Cutscene", "Dialogue", "Select Glass", "Select Base Liquor", "Select Additives",
+            "Process Additives", "Select Magic Ingredients", "Process Magic Mix", "Select Decoration"
         };
 
-        // Generate buttons by current step
-        List<ItemData> items = new List<ItemData>();
+        if (step >= 0 && step < stepNames.Length)
+            stepText.text = $"Current Step: {stepNames[step]}";
+        else
+            stepText.text = $"Current Step: {step}";
+
+        List<ItemData> items;
         switch (step)
         {
-            case 2: // Select Glass
-                items = BartenderGameData.Instance.GetItemsByType(stepItemTypes[0]);
+            case 3: // Select Glass
+                items = BartenderGameData.Instance.GetItemsByType(ItemType.Glass);
                 GenerateItemButtons(items, itemButtonParent);
                 break;
-            case 3: // Select Base Liquor
-                items = BartenderGameData.Instance.GetItemsByType(stepItemTypes[1]);
+
+            case 4: // Select Base Liquor
+                items = BartenderGameData.Instance.GetItemsByType(ItemType.BaseLiquor);
                 GenerateItemButtons(items, itemButtonParent);
                 break;
-            case 4: // Select Additives
-                items = BartenderGameData.Instance.GetItemsByType(stepItemTypes[2]);
+
+            case 5: // Select Additives
+                items = BartenderGameData.Instance.GetItemsByType(ItemType.Additive);
                 GenerateItemButtons(items, itemButtonParent);
                 break;
-            case 6: // Select Magic Ingredients
-                items = BartenderGameData.Instance.GetItemsByType(stepItemTypes[4]);
+
+            case 7: // Select Magic Ingredients
+                items = BartenderGameData.Instance.GetItemsByType(ItemType.MagicMaterial);
                 GenerateItemButtons(items, itemButtonParent);
                 break;
-            case 8: // Select Decoration
-                items = BartenderGameData.Instance.GetItemsByType(stepItemTypes[6]);
+
+            case 9: // Select Decoration
+                items = BartenderGameData.Instance.GetItemsByType(ItemType.Decoration);
                 GenerateItemButtons(items, itemButtonParent);
                 break;
         }
     }
 
-    // Show Additive Processing Popup
     public void ShowAdditiveProcessPanel()
     {
         ClearAllItemButtons(itemButtonParent);
@@ -129,7 +152,6 @@ public class UIManager : MonoBehaviour
         GenerateItemButtons(processItems, additiveProcessParent);
     }
 
-    // Show Magic Mix Processing Popup
     public void ShowMagicProcessPanel()
     {
         ClearAllItemButtons(itemButtonParent);
@@ -139,7 +161,6 @@ public class UIManager : MonoBehaviour
         GenerateItemButtons(magicItems, magicProcessParent);
     }
 
-    // Generate Item Buttons
     private void GenerateItemButtons(List<ItemData> items, Transform parent)
     {
         ClearAllItemButtons(parent);
@@ -148,14 +169,13 @@ public class UIManager : MonoBehaviour
             GameObject btnObj = Instantiate(itemButtonPrefab, parent);
             ItemButton btn = btnObj.GetComponent<ItemButton>();
             btn.SetItemData(item);
-            btn.button.onClick.AddListener(() => 
+            btn.button.onClick.AddListener(() =>
             {
                 GameManager.Instance.SelectItem(item);
             });
         }
     }
 
-    // Clear all buttons under target parent
     private void ClearAllItemButtons(Transform parent)
     {
         foreach (Transform child in parent)
@@ -164,13 +184,11 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    // Initialize Result Screen UI
     private void InitResultUI()
     {
         Cocktail cocktail = BartenderGameData.Instance.currentCocktail;
         Customer customer = BartenderGameData.Instance.currentCustomer;
 
-        // Show win/lose result
         if (BartenderGameData.Instance.isWin)
         {
             resultText.text = $"🎉 Congratulations! {customer.name} loves your drink!";
@@ -182,14 +200,12 @@ public class UIManager : MonoBehaviour
             resultText.color = Color.red;
         }
 
-        // Show detailed stats
-        detailText.text = 
+        detailText.text =
             $"Customer Requirements: Alcohol {customer.needStrong} | Bitterness {customer.needBitter} | Thickness {customer.needThick}\n" +
             $"Your Creation: Alcohol {cocktail.strong} | Bitterness {cocktail.bitter} | Thickness {cocktail.thick}\n" +
             $"Error Margin: Alcohol {BartenderGameData.Instance.errorValues[0]} | Bitterness {BartenderGameData.Instance.errorValues[1]} | Thickness {BartenderGameData.Instance.errorValues[2]} (Allowed: ±2)";
     }
 
-    // Button click handlers for Result Scene
     public void OnRestartButtonClicked()
     {
         if (GameManager.Instance != null)

@@ -38,14 +38,21 @@ public class GameManager : MonoBehaviour
     private void PlayCustomerAnimation()
     {
         Debug.Log("播放顾客出场动画...");
-        // 动画播放完成后进入选杯子步骤
-        Invoke("EnterSelectGlassStep", animationDuration);
+        // 动画播放完成后进入对话步骤
+        Invoke(nameof(EnterDialogueStep), animationDuration);
     }
 
-    // 进入选杯子步骤
-    private void EnterSelectGlassStep()
+    // 进入对话步骤（从 DialogueController 读取对话数据）
+    private void EnterDialogueStep()
     {
         BartenderGameData.Instance.currentStep = 2;
+        UIManager.Instance.StartDialogue(EnterSelectGlassStep);
+    }
+
+    // 对话结束后进入选杯子步骤
+    private void EnterSelectGlassStep()
+    {
+        BartenderGameData.Instance.currentStep = 3;
         UIManager.Instance.UpdateStepUI(BartenderGameData.Instance.currentStep);
     }
 
@@ -54,25 +61,25 @@ public class GameManager : MonoBehaviour
     {
         switch (BartenderGameData.Instance.currentStep)
         {
-            case 2: // 选杯子
+            case 3: // 选杯子
                 HandleGlassSelection(selectedItem);
                 break;
-            case 3: // 选基酒
+            case 4: // 选基酒
                 HandleBaseLiquorSelection(selectedItem);
                 break;
-            case 4: // 选辅料
+            case 5: // 选辅料
                 HandleAdditiveSelection(selectedItem);
                 break;
-            case 5: // 辅料加工
+            case 6: // 辅料加工
                 HandleAdditiveProcess(selectedItem);
                 break;
-            case 6: // 选魔法材料
+            case 7: // 选魔法材料
                 HandleMagicMaterialSelection(selectedItem);
                 break;
-            case 7: // 魔法材料操作
+            case 8: // 魔法材料操作
                 HandleMagicProcess(selectedItem);
                 break;
-            case 8: // 选装饰
+            case 9: // 选装饰
                 HandleDecorationSelection(selectedItem);
                 break;
         }
@@ -83,8 +90,8 @@ public class GameManager : MonoBehaviour
     {
         BartenderGameData.Instance.currentCocktail.AddItemAttributes(glass);
         BartenderGameData.Instance.currentCocktail.RecordStep(1, $"选择杯子：{glass.itemName}");
-        BartenderGameData.Instance.currentStep = 3; // 进入选基酒
-        UIManager.Instance.UpdateStepUI(3);
+        BartenderGameData.Instance.currentStep = 4; // 进入选基酒
+        UIManager.Instance.UpdateStepUI(4);
     }
 
     // 处理基酒选择
@@ -92,15 +99,15 @@ public class GameManager : MonoBehaviour
     {
         BartenderGameData.Instance.currentCocktail.AddItemAttributes(baseLiquor);
         BartenderGameData.Instance.currentCocktail.RecordStep(2, $"选择基酒：{baseLiquor.itemName}");
-        BartenderGameData.Instance.currentStep = 4; // 进入选辅料
-        UIManager.Instance.UpdateStepUI(4);
+        BartenderGameData.Instance.currentStep = 5; // 进入选辅料
+        UIManager.Instance.UpdateStepUI(5);
     }
 
     // 处理辅料选择（选中后弹出加工面板）
     private void HandleAdditiveSelection(ItemData additive)
     {
         BartenderGameData.Instance.tempSelectedAdditive = additive;
-        BartenderGameData.Instance.currentStep = 5; // 进入辅料加工
+        BartenderGameData.Instance.currentStep = 6; // 进入辅料加工
         UIManager.Instance.ShowAdditiveProcessPanel(); // 弹出加工面板
     }
 
@@ -116,15 +123,15 @@ public class GameManager : MonoBehaviour
         // 清空临时存储
         BartenderGameData.Instance.tempSelectedAdditive = null;
         // 进入选魔法材料
-        BartenderGameData.Instance.currentStep = 6;
-        UIManager.Instance.UpdateStepUI(6);
+        BartenderGameData.Instance.currentStep = 7;
+        UIManager.Instance.UpdateStepUI(7);
     }
 
     // 处理魔法材料选择（选中后弹出操作面板）
     private void HandleMagicMaterialSelection(ItemData magic)
     {
         BartenderGameData.Instance.tempSelectedMagic = magic;
-        BartenderGameData.Instance.currentStep = 7; // 进入魔法操作
+        BartenderGameData.Instance.currentStep = 8; // 进入魔法操作
         UIManager.Instance.ShowMagicProcessPanel(); // 弹出操作面板
     }
 
@@ -140,8 +147,8 @@ public class GameManager : MonoBehaviour
         // 清空临时存储
         BartenderGameData.Instance.tempSelectedMagic = null;
         // 进入选装饰
-        BartenderGameData.Instance.currentStep = 8;
-        UIManager.Instance.UpdateStepUI(8);
+        BartenderGameData.Instance.currentStep = 9;
+        UIManager.Instance.UpdateStepUI(9);
     }
 
     // 处理装饰选择（最后一步，直接判定）
@@ -164,7 +171,7 @@ public class GameManager : MonoBehaviour
         // 计算三个属性的误差
         int strongDiff = Mathf.Abs(cocktail.strong - customer.needStrong);
         int bitterDiff = Mathf.Abs(cocktail.bitter - customer.needBitter);
-        int thickDiff = Mathf.Abs(cocktail.thick - customer.needThick); // 新增浓稠度误差
+        int thickDiff = Mathf.Abs(cocktail.thick - customer.needThick);
 
         // 误差±2以内获胜
         BartenderGameData.Instance.isWin = (strongDiff <= 2 && bitterDiff <= 2 && thickDiff <= 2);

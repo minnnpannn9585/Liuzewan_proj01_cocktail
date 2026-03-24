@@ -11,9 +11,12 @@ public class BartenderGameData : MonoBehaviour
     // 当前游戏状态
     public Cocktail currentCocktail;
     public Customer currentCustomer;
-    public int currentStep = 0; // 0:主菜单 1:过场动画 2:选杯子 3:选基酒 4:选辅料 5:辅料加工 6:选魔法材料 7:魔法操作 8:选装饰 9:判定结果
+
+    // 0:主菜单 1:过场动画 2:对话 3:选杯子 4:选基酒 5:选辅料 6:辅料加工 7:选魔法材料 8:魔法操作 9:选装饰 10:判定结果
+    public int currentStep = 0;
+
     public bool isWin;
-    public int[] errorValues; // [strongDiff, bitterDiff, thickDiff]（新增浓稠度误差）
+    public int[] errorValues; // [strongDiff, bitterDiff, thickDiff]
 
     // 临时存储选中的辅料/魔法材料（用于加工/操作后累加属性）
     public ItemData tempSelectedAdditive;
