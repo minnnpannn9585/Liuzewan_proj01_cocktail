@@ -24,9 +24,8 @@ public class GameManager : MonoBehaviour
     // 开始新游戏（主菜单点击）
     public void StartNewGame()
     {
-        // 1. 初始化游戏数据
+        // 1. 初始化游戏数据（固定顾客）
         BartenderGameData.Instance.currentCustomer = new Customer();
-        BartenderGameData.Instance.currentCustomer.GenerateRandomCustomer();
         BartenderGameData.Instance.currentCocktail = new Cocktail();
         BartenderGameData.Instance.currentStep = 1; // 进入过场动画步骤
 
