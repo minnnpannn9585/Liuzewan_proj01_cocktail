@@ -17,6 +17,11 @@ public class UIManager : MonoBehaviour
     public Transform itemButtonParent;
     public GameObject itemButtonPrefab;
 
+    [Header("Item Hover Info UI")]
+    public GameObject itemHoverPanel;
+    public TextMeshProUGUI itemHoverNameText;
+    public TextMeshProUGUI itemHoverDescText;
+
     [Header("Dialogue UI")]
     public DialogueController dialogueController;
 
@@ -46,7 +51,35 @@ public class UIManager : MonoBehaviour
         if (magicProcessPanel != null) magicProcessPanel.SetActive(false);
 
         if (dialogueController != null)
-            dialogueController.gameObject.SetActive(true); // controller 自己会 Hide 面板
+            dialogueController.gameObject.SetActive(true);
+
+        HideItemHoverInfo();
+    }
+
+    // Hover info API (called by ItemButton)
+    public void ShowItemHoverInfo(ItemData item)
+    {
+        if (item == null)
+            return;
+
+        if (itemHoverNameText != null)
+            itemHoverNameText.text = item.itemName;
+
+        if (itemHoverDescText != null)
+        {
+            itemHoverDescText.text =
+                $"{item.description}\n" +
+                $"Effect: Alcohol {item.strongValue} | Bitterness {item.bitterValue} | Thickness {item.thickValue}";
+        }
+
+        if (itemHoverPanel != null)
+            itemHoverPanel.SetActive(true);
+    }
+
+    public void HideItemHoverInfo()
+    {
+        if (itemHoverPanel != null)
+            itemHoverPanel.SetActive(false);
     }
 
     private void Start()
@@ -61,14 +94,12 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    // Initialize Game Scene UI
     private void InitGameUI()
     {
         Customer customer = BartenderGameData.Instance.currentCustomer;
         customerNameText.text = $"Customer: {customer.name}";
         customerDemandText.text = $"Requirements: Alcohol {customer.needStrong} | Bitterness {customer.needBitter} | Thickness {customer.needThick}";
 
-        // Init step UI if already in gameplay
         if (BartenderGameData.Instance.currentStep >= 3)
         {
             UpdateStepUI(BartenderGameData.Instance.currentStep);
@@ -77,10 +108,11 @@ public class UIManager : MonoBehaviour
 
     public void StartDialogue(System.Action onFinished)
     {
-        // 对话期间隐藏可交互物品按钮
         ClearAllItemButtons(itemButtonParent);
         if (additiveProcessPanel != null) additiveProcessPanel.SetActive(false);
         if (magicProcessPanel != null) magicProcessPanel.SetActive(false);
+
+        HideItemHoverInfo();
 
         stepText.text = "Current Step: Dialogue";
 
@@ -90,18 +122,17 @@ public class UIManager : MonoBehaviour
         }
         else
         {
-            // 没绑定对话控制器就直接跳过，避免卡死
             onFinished?.Invoke();
         }
     }
 
-    // Update Step UI
     public void UpdateStepUI(int step)
     {
         if (additiveProcessPanel != null) additiveProcessPanel.SetActive(false);
         if (magicProcessPanel != null) magicProcessPanel.SetActive(false);
 
         ClearAllItemButtons(itemButtonParent);
+        HideItemHoverInfo();
 
         string[] stepNames = {
             "Main Menu", "Cutscene", "Dialogue", "Select Glass", "Select Base Liquor", "Select Additives",
@@ -116,27 +147,27 @@ public class UIManager : MonoBehaviour
         List<ItemData> items;
         switch (step)
         {
-            case 3: // Select Glass
+            case 3:
                 items = BartenderGameData.Instance.GetItemsByType(ItemType.Glass);
                 GenerateItemButtons(items, itemButtonParent);
                 break;
 
-            case 4: // Select Base Liquor
+            case 4:
                 items = BartenderGameData.Instance.GetItemsByType(ItemType.BaseLiquor);
                 GenerateItemButtons(items, itemButtonParent);
                 break;
 
-            case 5: // Select Additives
+            case 5:
                 items = BartenderGameData.Instance.GetItemsByType(ItemType.Additive);
                 GenerateItemButtons(items, itemButtonParent);
                 break;
 
-            case 7: // Select Magic Ingredients
+            case 7:
                 items = BartenderGameData.Instance.GetItemsByType(ItemType.MagicMaterial);
                 GenerateItemButtons(items, itemButtonParent);
                 break;
 
-            case 9: // Select Decoration
+            case 9:
                 items = BartenderGameData.Instance.GetItemsByType(ItemType.Decoration);
                 GenerateItemButtons(items, itemButtonParent);
                 break;
@@ -146,7 +177,9 @@ public class UIManager : MonoBehaviour
     public void ShowAdditiveProcessPanel()
     {
         ClearAllItemButtons(itemButtonParent);
-        additiveProcessPanel.SetActive(true);
+        if (additiveProcessPanel != null) additiveProcessPanel.SetActive(true);
+
+        HideItemHoverInfo();
 
         List<ItemData> processItems = BartenderGameData.Instance.GetItemsByType(ItemType.AdditiveProcess);
         GenerateItemButtons(processItems, additiveProcessParent);
@@ -155,7 +188,9 @@ public class UIManager : MonoBehaviour
     public void ShowMagicProcessPanel()
     {
         ClearAllItemButtons(itemButtonParent);
-        magicProcessPanel.SetActive(true);
+        if (magicProcessPanel != null) magicProcessPanel.SetActive(true);
+
+        HideItemHoverInfo();
 
         List<ItemData> magicItems = BartenderGameData.Instance.GetItemsByType(ItemType.MagicProcess);
         GenerateItemButtons(magicItems, magicProcessParent);

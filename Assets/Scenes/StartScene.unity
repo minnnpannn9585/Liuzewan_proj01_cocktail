@@ -234,7 +234,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 906acc95fa277408e9b885a8c8ac3ae2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  animationDuration: 2
+  animationDuration: 1.9
 --- !u!1 &881861176
 GameObject:
   m_ObjectHideFlags: 0
@@ -495,98 +495,126 @@ MonoBehaviour:
     bitterValue: 0
     thickValue: 0
     description: 
-    itemSprite: {fileID: -2109636260, guid: d7ce334a33cd5644b8aeb963b2a2e5d3, type: 3}
+    itemSprite: {fileID: 21300000, guid: 1287f35a64ed5334a83485224229d6d1, type: 3}
   - itemName: glass02
     itemType: 0
     strongValue: 0
     bitterValue: 0
     thickValue: 0
     description: 
-    itemSprite: {fileID: 5774242, guid: d7ce334a33cd5644b8aeb963b2a2e5d3, type: 3}
+    itemSprite: {fileID: 21300000, guid: d6fe6822efacfe54c8b6cbf5000ca9ab, type: 3}
   - itemName: glass03
     itemType: 0
     strongValue: 0
     bitterValue: 0
     thickValue: 0
     description: 
-    itemSprite: {fileID: 361592070, guid: d7ce334a33cd5644b8aeb963b2a2e5d3, type: 3}
+    itemSprite: {fileID: 21300000, guid: 834de95d5eb68484cac666ed8398b3b6, type: 3}
   - itemName: glass04
     itemType: 0
     strongValue: 0
     bitterValue: 0
     thickValue: 0
     description: 
-    itemSprite: {fileID: -1514498238, guid: d7ce334a33cd5644b8aeb963b2a2e5d3, type: 3}
+    itemSprite: {fileID: 21300000, guid: 7c62d4f254fba1048b37446b71c58821, type: 3}
   - itemName: glass05
     itemType: 0
     strongValue: 0
     bitterValue: 0
     thickValue: 0
     description: 
-    itemSprite: {fileID: 1096798642, guid: d7ce334a33cd5644b8aeb963b2a2e5d3, type: 3}
+    itemSprite: {fileID: 21300000, guid: a33f33c3f8b3ca3469c75affa1fd8fcf, type: 3}
   - itemName: glass06
     itemType: 0
     strongValue: 0
     bitterValue: 0
     thickValue: 0
     description: 
-    itemSprite: {fileID: -909549254, guid: d7ce334a33cd5644b8aeb963b2a2e5d3, type: 3}
+    itemSprite: {fileID: 21300000, guid: f6e0fd6acb1913843a0b5f31eb76702f, type: 3}
   - itemName: base01
     itemType: 1
     strongValue: 1
     bitterValue: 1
     thickValue: 1
     description: 
-    itemSprite: {fileID: -327959017, guid: 6000166e57329724287bf52432e51b9e, type: 3}
+    itemSprite: {fileID: 21300000, guid: 4d71eaff25c8f4f48a6283f0a3aed9ae, type: 3}
   - itemName: base02
     itemType: 1
     strongValue: 3
     bitterValue: 3
     thickValue: 3
     description: 
-    itemSprite: {fileID: 1924338454, guid: 6000166e57329724287bf52432e51b9e, type: 3}
+    itemSprite: {fileID: 21300000, guid: 1014154134c499e4486a27f00661922d, type: 3}
   - itemName: base03
     itemType: 1
     strongValue: 3
     bitterValue: 3
     thickValue: 3
     description: 
-    itemSprite: {fileID: -1913065325, guid: 6000166e57329724287bf52432e51b9e, type: 3}
+    itemSprite: {fileID: 21300000, guid: dc19e62b697411843ae5c4e654872d2c, type: 3}
   - itemName: base04
     itemType: 1
     strongValue: 3
     bitterValue: 3
     thickValue: 3
     description: 
-    itemSprite: {fileID: -160860606, guid: 6000166e57329724287bf52432e51b9e, type: 3}
+    itemSprite: {fileID: 21300000, guid: e62ea6e835b4db14890d70489464ca48, type: 3}
   - itemName: base05
     itemType: 1
     strongValue: 3
     bitterValue: 3
     thickValue: 3
     description: 
-    itemSprite: {fileID: -331304829, guid: 6000166e57329724287bf52432e51b9e, type: 3}
+    itemSprite: {fileID: 21300000, guid: 161a95e4c2f247a4b9fef919db53f337, type: 3}
   - itemName: base06
     itemType: 1
     strongValue: 3
     bitterValue: 3
     thickValue: 3
     description: 
-    itemSprite: {fileID: 161965451, guid: 6000166e57329724287bf52432e51b9e, type: 3}
+    itemSprite: {fileID: 21300000, guid: aa943fd1ef08830458fc523f7bf7ff86, type: 3}
   - itemName: add01
     itemType: 2
     strongValue: 3
     bitterValue: 3
     thickValue: 3
     description: 
-    itemSprite: {fileID: 0}
+    itemSprite: {fileID: 21300000, guid: 699f3f10e2e144946aaba2d6c404a471, type: 3}
   - itemName: add02
     itemType: 2
     strongValue: 3
     bitterValue: 3
     thickValue: 3
     description: 
-    itemSprite: {fileID: 0}
+    itemSprite: {fileID: 21300000, guid: d5a7bf31c1a4a8a4ca7c1ad2cbf7b0ac, type: 3}
+  - itemName: add03
+    itemType: 2
+    strongValue: 3
+    bitterValue: 3
+    thickValue: 3
+    description: 
+    itemSprite: {fileID: 21300000, guid: b3e44e2229f85cb449a977b7d9664393, type: 3}
+  - itemName: add04
+    itemType: 2
+    strongValue: 3
+    bitterValue: 3
+    thickValue: 3
+    description: 
+    itemSprite: {fileID: 21300000, guid: 17a581d7506e24a47806461102e12cf0, type: 3}
+  - itemName: add05
+    itemType: 2
+    strongValue: 3
+    bitterValue: 3
+    thickValue: 3
+    description: 
+    itemSprite: {fileID: 21300000, guid: 0fbbffdf241f06c44acd5e80fc7040ae, type: 3}
+  - itemName: add06
+    itemType: 2
+    strongValue: 3
+    bitterValue: 3
+    thickValue: 3
+    description: 
+    itemSprite: {fileID: 21300000, guid: 5ee372e143055444390a871b107e609c, type: 3}
   - itemName: magic01
     itemType: 3
     strongValue: 3

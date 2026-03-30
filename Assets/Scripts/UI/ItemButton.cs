@@ -1,22 +1,36 @@
-using UnityEngine;
-using UnityEngine.UI;
 using TMPro;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
-// Item Button Component (Full English Version)
-public class ItemButton : MonoBehaviour
+// Item Button Component (Icon only + Hover to show details in a shared panel)
+public class ItemButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
     public Image iconImage;
-    public TextMeshProUGUI nameText;
-    public TextMeshProUGUI descText;
     public Button button;
+
+    private ItemData _item;
 
     public void SetItemData(ItemData item)
     {
-        if (item.itemSprite != null)
-        {
+        _item = item;
+
+        if (iconImage != null && item != null && item.itemSprite != null)
             iconImage.sprite = item.itemSprite;
-        }
-        nameText.text = item.itemName;
-        descText.text = $"{item.description}\nEffect: Alcohol {item.strongValue} | Bitterness {item.bitterValue} | Thickness {item.thickValue}";
+    }
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        if (_item == null)
+            return;
+
+        if (UIManager.Instance != null)
+            UIManager.Instance.ShowItemHoverInfo(_item);
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        if (UIManager.Instance != null)
+            UIManager.Instance.HideItemHoverInfo();
     }
 }
