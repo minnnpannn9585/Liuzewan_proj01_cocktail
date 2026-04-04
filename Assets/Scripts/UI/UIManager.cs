@@ -25,6 +25,12 @@ public class UIManager : MonoBehaviour
     public TextMeshProUGUI itemHoverNameText;
     public TextMeshProUGUI itemHoverDescText;
 
+    [Tooltip("Hover panel offset from mouse position (pixels).")]
+    public Vector2 hoverPanelOffset = new Vector2(18f, -18f);
+
+    [Tooltip("Clamp hover panel within canvas rect.")]
+    public bool clampHoverPanelToCanvas = true;
+
     [Header("Dialogue UI")]
     public DialogueController dialogueController;
 
@@ -60,6 +66,10 @@ public class UIManager : MonoBehaviour
 
     private readonly List<ItemButton> _spawnedItemButtons = new List<ItemButton>();
 
+    // Hover follow cache
+    private Canvas _rootCanvas;
+    private RectTransform _hoverRect;
+
     private void Awake()
     {
         if (Instance == null) Instance = this;
@@ -81,8 +91,85 @@ public class UIManager : MonoBehaviour
             });
         }
 
+        CacheHoverPanel();
+        ConfigureHoverPanelRaycasts();
+
         HideItemHoverInfo();
         SetNextButtonVisible(false);
+    }
+
+    private void Update()
+    {
+        UpdateHoverPanelFollowMouse();
+    }
+
+    private void CacheHoverPanel()
+    {
+        _rootCanvas = GetComponentInParent<Canvas>();
+        if (_rootCanvas == null)
+            _rootCanvas = FindFirstObjectByType<Canvas>();
+
+        if (itemHoverPanel != null)
+            _hoverRect = itemHoverPanel.GetComponent<RectTransform>();
+    }
+
+    // Prevent hover panel from stealing pointer and causing flicker.
+    private void ConfigureHoverPanelRaycasts()
+    {
+        if (itemHoverPanel == null)
+            return;
+
+        var cg = itemHoverPanel.GetComponent<CanvasGroup>();
+        if (cg == null) cg = itemHoverPanel.AddComponent<CanvasGroup>();
+        cg.blocksRaycasts = false;
+        cg.interactable = false;
+
+        foreach (var g in itemHoverPanel.GetComponentsInChildren<Graphic>(true))
+            g.raycastTarget = false;
+    }
+
+    private void UpdateHoverPanelFollowMouse()
+    {
+        if (itemHoverPanel == null || _hoverRect == null || !itemHoverPanel.activeSelf)
+            return;
+
+        if (_rootCanvas == null)
+            return;
+
+        // Only handle Screen Space canvases here (most common UI setup).
+        if (_rootCanvas.renderMode == RenderMode.WorldSpace)
+            return;
+
+        RectTransform canvasRect = _rootCanvas.transform as RectTransform;
+        Camera cam = _rootCanvas.renderMode == RenderMode.ScreenSpaceCamera ? _rootCanvas.worldCamera : null;
+
+        Vector2 screenPos = (Vector2)Input.mousePosition + hoverPanelOffset;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPos, cam, out Vector2 localPos);
+        _hoverRect.anchoredPosition = localPos;
+
+        if (clampHoverPanelToCanvas)
+            ClampRectToCanvas(canvasRect, _hoverRect);
+    }
+
+    private static void ClampRectToCanvas(RectTransform canvasRect, RectTransform tooltipRect)
+    {
+        Canvas.ForceUpdateCanvases();
+
+        Vector2 canvasSize = canvasRect.rect.size;
+        Vector2 tooltipSize = tooltipRect.rect.size;
+        Vector2 pivot = tooltipRect.pivot;
+
+        Vector2 pos = tooltipRect.anchoredPosition;
+
+        float minX = -canvasSize.x * 0.5f + tooltipSize.x * pivot.x;
+        float maxX = canvasSize.x * 0.5f - tooltipSize.x * (1f - pivot.x);
+        float minY = -canvasSize.y * 0.5f + tooltipSize.y * pivot.y;
+        float maxY = canvasSize.y * 0.5f - tooltipSize.y * (1f - pivot.y);
+
+        pos.x = Mathf.Clamp(pos.x, minX, maxX);
+        pos.y = Mathf.Clamp(pos.y, minY, maxY);
+
+        tooltipRect.anchoredPosition = pos;
     }
 
     public void SetNextButtonVisible(bool visible)
@@ -157,6 +244,9 @@ public class UIManager : MonoBehaviour
 
         if (itemHoverPanel != null)
             itemHoverPanel.SetActive(true);
+
+        // Position immediately so it doesn't "jump" next frame
+        UpdateHoverPanelFollowMouse();
     }
 
     public void HideItemHoverInfo()
