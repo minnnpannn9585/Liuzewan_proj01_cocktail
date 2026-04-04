@@ -17,6 +17,9 @@ public class UIManager : MonoBehaviour
     public Transform itemButtonParent;
     public GameObject itemButtonPrefab;
 
+    [Header("Step Control UI")]
+    public Button nextButton;
+
     [Header("Item Hover Info UI")]
     public GameObject itemHoverPanel;
     public TextMeshProUGUI itemHoverNameText;
@@ -35,32 +38,112 @@ public class UIManager : MonoBehaviour
     public TextMeshProUGUI resultText;
     public TextMeshProUGUI detailText;
 
+    [Header("Step Correct Answers (Step 3/4/5/7/9) - by Item Name")]
+    public string correctGlassItemName;          // Step 3
+    public bool allowNoSelectionAsCorrect_Glass;
+
+    public string correctBaseLiquorItemName;     // Step 4
+    public bool allowNoSelectionAsCorrect_BaseLiquor;
+
+    public string correctAdditiveItemName;       // Step 5
+    public bool allowNoSelectionAsCorrect_Additive;
+
+    public string correctMagicMaterialItemName;  // Step 7
+    public bool allowNoSelectionAsCorrect_MagicMaterial;
+
+    public string correctDecorationItemName;     // Step 9
+    public bool allowNoSelectionAsCorrect_Decoration;
+
+    [Header("Wrong Selection Feedback")]
+    public GameObject errorPopupPrefab;          // prefab with TimeDestroySelf
+    public Transform errorPopupParent;           // optional UI parent
+
+    private readonly List<ItemButton> _spawnedItemButtons = new List<ItemButton>();
+
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        if (Instance == null) Instance = this;
+        else { Destroy(gameObject); return; }
 
-        // Hide popups on init
         if (additiveProcessPanel != null) additiveProcessPanel.SetActive(false);
         if (magicProcessPanel != null) magicProcessPanel.SetActive(false);
 
         if (dialogueController != null)
             dialogueController.gameObject.SetActive(true);
 
+        if (nextButton != null)
+        {
+            nextButton.onClick.RemoveAllListeners();
+            nextButton.onClick.AddListener(() =>
+            {
+                if (GameManager.Instance != null)
+                    GameManager.Instance.OnNextButtonClicked();
+            });
+        }
+
         HideItemHoverInfo();
+        SetNextButtonVisible(false);
     }
 
-    // Hover info API (called by ItemButton)
+    public void SetNextButtonVisible(bool visible)
+    {
+        if (nextButton != null)
+            nextButton.gameObject.SetActive(visible);
+    }
+
+    public void SetNextButtonInteractable(bool interactable)
+    {
+        if (nextButton != null)
+            nextButton.interactable = interactable;
+    }
+
+    public void ShowWrongSelectionPopup()
+    {
+        if (errorPopupPrefab == null)
+            return;
+
+        Transform parent = errorPopupParent != null ? errorPopupParent : transform;
+        Instantiate(errorPopupPrefab, parent, false);
+    }
+
+    public void UpdateSelectionVisual(ItemData selected)
+    {
+        for (int i = 0; i < _spawnedItemButtons.Count; i++)
+        {
+            var btn = _spawnedItemButtons[i];
+            bool isSelected = (selected != null && btn != null && btn.Item != null && btn.Item.itemName == selected.itemName);
+            btn?.SetSelected(isSelected);
+        }
+    }
+
+    public bool IsSelectionCorrectForStep(int step, ItemData selected)
+    {
+        return step switch
+        {
+            3 => IsCorrectByName(selected, correctGlassItemName, allowNoSelectionAsCorrect_Glass),
+            4 => IsCorrectByName(selected, correctBaseLiquorItemName, allowNoSelectionAsCorrect_BaseLiquor),
+            5 => IsCorrectByName(selected, correctAdditiveItemName, allowNoSelectionAsCorrect_Additive),
+            7 => IsCorrectByName(selected, correctMagicMaterialItemName, allowNoSelectionAsCorrect_MagicMaterial),
+            9 => IsCorrectByName(selected, correctDecorationItemName, allowNoSelectionAsCorrect_Decoration),
+            _ => false
+        };
+    }
+
+    private static bool IsCorrectByName(ItemData selected, string correctItemName, bool allowNoSelection)
+    {
+        if (selected == null)
+            return allowNoSelection;
+
+        if (string.IsNullOrWhiteSpace(correctItemName))
+            return false;
+
+        return string.Equals(selected.itemName, correctItemName, System.StringComparison.Ordinal);
+    }
+
+    // Hover info
     public void ShowItemHoverInfo(ItemData item)
     {
-        if (item == null)
-            return;
+        if (item == null) return;
 
         if (itemHoverNameText != null)
             itemHoverNameText.text = item.itemName;
@@ -84,14 +167,8 @@ public class UIManager : MonoBehaviour
 
     private void Start()
     {
-        if (SceneManager.GetActiveScene().name == "GameScene")
-        {
-            InitGameUI();
-        }
-        else if (SceneManager.GetActiveScene().name == "ResultScene")
-        {
-            InitResultUI();
-        }
+        if (SceneManager.GetActiveScene().name == "GameScene") InitGameUI();
+        else if (SceneManager.GetActiveScene().name == "ResultScene") InitResultUI();
     }
 
     private void InitGameUI()
@@ -101,9 +178,7 @@ public class UIManager : MonoBehaviour
         customerDemandText.text = $"Requirements: Alcohol {customer.needStrong} | Bitterness {customer.needBitter} | Thickness {customer.needThick}";
 
         if (BartenderGameData.Instance.currentStep >= 3)
-        {
             UpdateStepUI(BartenderGameData.Instance.currentStep);
-        }
     }
 
     public void StartDialogue(System.Action onFinished)
@@ -113,17 +188,12 @@ public class UIManager : MonoBehaviour
         if (magicProcessPanel != null) magicProcessPanel.SetActive(false);
 
         HideItemHoverInfo();
+        SetNextButtonVisible(false);
 
         stepText.text = "Current Step: Dialogue";
 
-        if (dialogueController != null)
-        {
-            dialogueController.PlayConfigured(onFinished);
-        }
-        else
-        {
-            onFinished?.Invoke();
-        }
+        if (dialogueController != null) dialogueController.PlayConfigured(onFinished);
+        else onFinished?.Invoke();
     }
 
     public void UpdateStepUI(int step)
@@ -134,15 +204,21 @@ public class UIManager : MonoBehaviour
         ClearAllItemButtons(itemButtonParent);
         HideItemHoverInfo();
 
+        bool needNext = step == 3 || step == 4 || step == 5 || step == 7 || step == 9;
+        SetNextButtonVisible(needNext);
+
+        // If "no selection is correct", Next should start enabled.
+        bool canNextWithoutSelection = needNext && IsSelectionCorrectForStep(step, null);
+        SetNextButtonInteractable(canNextWithoutSelection);
+
         string[] stepNames = {
             "Main Menu", "Cutscene", "Dialogue", "Select Glass", "Select Base Liquor", "Select Additives",
             "Process Additives", "Select Magic Ingredients", "Process Magic Mix", "Select Decoration"
         };
 
-        if (step >= 0 && step < stepNames.Length)
-            stepText.text = $"Current Step: {stepNames[step]}";
-        else
-            stepText.text = $"Current Step: {step}";
+        stepText.text = (step >= 0 && step < stepNames.Length)
+            ? $"Current Step: {stepNames[step]}"
+            : $"Current Step: {step}";
 
         List<ItemData> items;
         switch (step)
@@ -151,27 +227,25 @@ public class UIManager : MonoBehaviour
                 items = BartenderGameData.Instance.GetItemsByType(ItemType.Glass);
                 GenerateItemButtons(items, itemButtonParent);
                 break;
-
             case 4:
                 items = BartenderGameData.Instance.GetItemsByType(ItemType.BaseLiquor);
                 GenerateItemButtons(items, itemButtonParent);
                 break;
-
             case 5:
                 items = BartenderGameData.Instance.GetItemsByType(ItemType.Additive);
                 GenerateItemButtons(items, itemButtonParent);
                 break;
-
             case 7:
                 items = BartenderGameData.Instance.GetItemsByType(ItemType.MagicMaterial);
                 GenerateItemButtons(items, itemButtonParent);
                 break;
-
             case 9:
                 items = BartenderGameData.Instance.GetItemsByType(ItemType.Decoration);
                 GenerateItemButtons(items, itemButtonParent);
                 break;
         }
+
+        UpdateSelectionVisual(null);
     }
 
     public void ShowAdditiveProcessPanel()
@@ -180,6 +254,7 @@ public class UIManager : MonoBehaviour
         if (additiveProcessPanel != null) additiveProcessPanel.SetActive(true);
 
         HideItemHoverInfo();
+        SetNextButtonVisible(false);
 
         List<ItemData> processItems = BartenderGameData.Instance.GetItemsByType(ItemType.AdditiveProcess);
         GenerateItemButtons(processItems, additiveProcessParent);
@@ -191,6 +266,7 @@ public class UIManager : MonoBehaviour
         if (magicProcessPanel != null) magicProcessPanel.SetActive(true);
 
         HideItemHoverInfo();
+        SetNextButtonVisible(false);
 
         List<ItemData> magicItems = BartenderGameData.Instance.GetItemsByType(ItemType.MagicProcess);
         GenerateItemButtons(magicItems, magicProcessParent);
@@ -199,10 +275,14 @@ public class UIManager : MonoBehaviour
     private void GenerateItemButtons(List<ItemData> items, Transform parent)
     {
         ClearAllItemButtons(parent);
+        _spawnedItemButtons.Clear();
+
         foreach (var item in items)
         {
             GameObject btnObj = Instantiate(itemButtonPrefab, parent);
             ItemButton btn = btnObj.GetComponent<ItemButton>();
+            _spawnedItemButtons.Add(btn);
+
             btn.SetItemData(item);
             btn.button.onClick.AddListener(() =>
             {
@@ -214,9 +294,9 @@ public class UIManager : MonoBehaviour
     private void ClearAllItemButtons(Transform parent)
     {
         foreach (Transform child in parent)
-        {
             Destroy(child.gameObject);
-        }
+
+        _spawnedItemButtons.Clear();
     }
 
     private void InitResultUI()
@@ -244,16 +324,12 @@ public class UIManager : MonoBehaviour
     public void OnRestartButtonClicked()
     {
         if (GameManager.Instance != null)
-        {
             GameManager.Instance.RestartGame();
-        }
     }
 
     public void OnBackButtonClicked()
     {
         if (GameManager.Instance != null)
-        {
             GameManager.Instance.BackToStart();
-        }
     }
 }

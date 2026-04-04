@@ -22,6 +22,9 @@ public class BartenderGameData : MonoBehaviour
     public ItemData tempSelectedAdditive;
     public ItemData tempSelectedMagic;
 
+    // 新增：用于“选择后点 Next 才确认”的步骤（3/4/5/7/9）
+    public ItemData tempSelectedItem;
+
     private void Awake()
     {
         if (Instance == null)
