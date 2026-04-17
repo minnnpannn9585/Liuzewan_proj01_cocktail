@@ -123,13 +123,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: StartBtn_0
+      name: startBtn_0
       rect:
         serializedVersion: 2
-        x: 958
-        y: 1041
-        width: 838
-        height: 330
+        x: 525
+        y: 1254
+        width: 836
+        height: 341
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -137,20 +137,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: e0aeed360c651b040a5bac8f460d4d6d
-      internalID: 1549909922
+      spriteID: 7953c6067618d8a43bda06cd1e649f02
+      internalID: 2113521858
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StartBtn_1
+      name: startBtn_1
       rect:
         serializedVersion: 2
-        x: 965
-        y: 609
-        width: 822
-        height: 326
+        x: 520
+        y: 804
+        width: 837
+        height: 342
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -158,20 +158,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 157fd92e6159bf143bcbfc4990712f5b
-      internalID: 880070149
+      spriteID: 37c9d1f49fb2b554cb39482287d1c89b
+      internalID: -1100779494
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StartBtn_2
+      name: startBtn_2
       rect:
         serializedVersion: 2
-        x: 967
-        y: 185
-        width: 824
-        height: 320
+        x: 525
+        y: 380
+        width: 836
+        height: 341
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -179,8 +179,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: ba792c19022fc6e4bbeb4b606d9030dd
-      internalID: -1111566770
+      spriteID: c590e207404fbb54487324ffe6074d8d
+      internalID: 1195842290
       vertices: []
       indices: 
       edges: []
@@ -196,9 +196,9 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      StartBtn_0: 1549909922
-      StartBtn_1: 880070149
-      StartBtn_2: -1111566770
+      startBtn_0: 2113521858
+      startBtn_1: -1100779494
+      startBtn_2: 1195842290
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

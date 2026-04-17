@@ -15,14 +15,14 @@ public class BartenderGameData : MonoBehaviour
     // 0:主菜单 1:过场动画 2:对话 3:选杯子 4:选基酒 5:选辅料 6:辅料加工 7:选魔法材料 8:魔法操作 9:选装饰 10:判定结果
     public int currentStep = 0;
 
-    public bool isWin;
-    public int[] errorValues; // [strongDiff, bitterDiff, thickDiff]
+    // 新增：第几杯（0=第一杯，1=第二杯）
+    public int drinkIndex = 0;
 
     // 临时存储选中的辅料/魔法材料（用于加工/操作后累加属性）
     public ItemData tempSelectedAdditive;
     public ItemData tempSelectedMagic;
 
-    // 新增：用于“选择后点 Next 才确认”的步骤（3/4/5/7/9）
+    // 用于“选择后点 Next 才确认”的步骤（3/4/5/7/9）
     public ItemData tempSelectedItem;
 
     private void Awake()
@@ -36,6 +36,7 @@ public class BartenderGameData : MonoBehaviour
         {
             Destroy(gameObject);
         }
+
         currentCocktail = new Cocktail();
     }
 

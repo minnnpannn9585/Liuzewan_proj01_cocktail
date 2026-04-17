@@ -22,13 +22,34 @@ public class GameManager : MonoBehaviour
 
     public void StartNewGame()
     {
+        BartenderGameData.Instance.drinkIndex = 0;
+        StartDrinkFromCutscene();
+    }
+
+    private void StartDrinkFromCutscene()
+    {
         BartenderGameData.Instance.currentCustomer = new Customer();
         BartenderGameData.Instance.currentCocktail = new Cocktail();
         BartenderGameData.Instance.currentStep = 1;
+
         BartenderGameData.Instance.tempSelectedItem = null;
+        BartenderGameData.Instance.tempSelectedAdditive = null;
+        BartenderGameData.Instance.tempSelectedMagic = null;
 
         SceneManager.LoadScene("GameScene");
         PlayCustomerAnimation();
+    }
+
+    private void StartNextDrinkFromDialogue()
+    {
+        BartenderGameData.Instance.currentCocktail = new Cocktail();
+        BartenderGameData.Instance.currentStep = 2;
+
+        BartenderGameData.Instance.tempSelectedItem = null;
+        BartenderGameData.Instance.tempSelectedAdditive = null;
+        BartenderGameData.Instance.tempSelectedMagic = null;
+
+        UIManager.Instance.StartDialogue(EnterSelectGlassStep);
     }
 
     private void PlayCustomerAnimation()
@@ -62,7 +83,18 @@ public class GameManager : MonoBehaviour
             case 7:
             case 9:
             {
-                BartenderGameData.Instance.tempSelectedItem = selectedItem;
+                // Toggle: click same item again to deselect
+                if (BartenderGameData.Instance.tempSelectedItem != null &&
+                    selectedItem != null &&
+                    BartenderGameData.Instance.tempSelectedItem.itemName == selectedItem.itemName)
+                {
+                    BartenderGameData.Instance.tempSelectedItem = null;
+                    selectedItem = null;
+                }
+                else
+                {
+                    BartenderGameData.Instance.tempSelectedItem = selectedItem;
+                }
 
                 if (UIManager.Instance != null)
                 {
@@ -71,7 +103,9 @@ public class GameManager : MonoBehaviour
                     bool isCorrect = UIManager.Instance.IsSelectionCorrectForStep(step, selectedItem);
                     UIManager.Instance.SetNextButtonInteractable(isCorrect);
 
-                    if (!isCorrect)
+                    // 只有在“选择了一个具体物品且它是错的”时才提示错误；
+                    // 取消选择(null)不弹错（并且可能允许空选为正确）
+                    if (selectedItem != null && !isCorrect)
                         UIManager.Instance.ShowWrongSelectionPopup();
                 }
 
@@ -93,7 +127,6 @@ public class GameManager : MonoBehaviour
         int step = BartenderGameData.Instance.currentStep;
         ItemData selected = BartenderGameData.Instance.tempSelectedItem;
 
-        // 允许“不选就是正确”的情况：selected 可为 null，但必须通过 UIManager 校验
         if (UIManager.Instance != null)
         {
             bool isCorrect = UIManager.Instance.IsSelectionCorrectForStep(step, selected);
@@ -106,14 +139,12 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            // 没 UIManager 就保持原逻辑：必须选择
             if (selected == null) return;
         }
 
         switch (step)
         {
             case 3:
-                // 如果 selected 为 null 且允许空选正确，那么这里应跳步但不加属性
                 if (selected != null) HandleGlassSelection(selected);
                 else { BartenderGameData.Instance.currentStep = 4; UIManager.Instance.UpdateStepUI(4); }
                 break;
@@ -135,22 +166,14 @@ public class GameManager : MonoBehaviour
 
             case 9:
                 if (selected != null) HandleDecorationSelection(selected);
-                else
-                {
-                    // 不选装饰也可能正确：直接结算
-                    CheckWin();
-                    SceneManager.LoadScene("ResultScene");
-                }
+                else HandleDrinkFinished();
                 break;
         }
 
         BartenderGameData.Instance.tempSelectedItem = null;
 
         if (UIManager.Instance != null)
-        {
             UIManager.Instance.UpdateSelectionVisual(null);
-            // 下一步 UpdateStepUI 内会设置 Next 状态
-        }
     }
 
     private void HandleGlassSelection(ItemData glass)
@@ -217,21 +240,25 @@ public class GameManager : MonoBehaviour
     {
         BartenderGameData.Instance.currentCocktail.AddItemAttributes(decoration);
         BartenderGameData.Instance.currentCocktail.RecordStep(7, $"选择装饰：{decoration.itemName}");
-        CheckWin();
-        SceneManager.LoadScene("ResultScene");
+        HandleDrinkFinished();
     }
 
-    private void CheckWin()
+    private void HandleDrinkFinished()
     {
-        Cocktail cocktail = BartenderGameData.Instance.currentCocktail;
-        Customer customer = BartenderGameData.Instance.currentCustomer;
-
-        int strongDiff = Mathf.Abs(cocktail.strong - customer.needStrong);
-        int bitterDiff = Mathf.Abs(cocktail.bitter - customer.needBitter);
-        int thickDiff = Mathf.Abs(cocktail.thick - customer.needThick);
-
-        BartenderGameData.Instance.isWin = (strongDiff <= 2 && bitterDiff <= 2 && thickDiff <= 2);
-        BartenderGameData.Instance.errorValues = new int[] { strongDiff, bitterDiff, thickDiff };
+        // Flow=2: show result panel, then either start drink2 or finish.
+        UIManager.Instance.ShowResultPanelForSeconds(5f, () =>
+        {
+            if (BartenderGameData.Instance.drinkIndex == 0)
+            {
+                BartenderGameData.Instance.drinkIndex = 1;
+                StartNextDrinkFromDialogue();
+            }
+            else
+            {
+                // 两杯都完成：回主菜单（或你也可以停留在当前场景）
+                BackToStart();
+            }
+        });
     }
 
     public void RestartGame() => StartNewGame();

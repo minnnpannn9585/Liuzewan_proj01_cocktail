@@ -1,10 +1,10 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 
-// UI Manager for Bartender Game (Full English Version)
 public class UIManager : MonoBehaviour
 {
     public static UIManager Instance;
@@ -31,6 +31,26 @@ public class UIManager : MonoBehaviour
     [Tooltip("Clamp hover panel within canvas rect.")]
     public bool clampHoverPanelToCanvas = true;
 
+    [Header("Result Panel (GameScene)")]
+    public GameObject resultPanel;
+    public Image resultImage;
+    public Sprite drink1ResultSprite;
+    public Sprite drink2ResultSprite;
+
+    [Header("Drink 1 Dialogue Lines")]
+    [TextArea(2, 4)]
+    public string[] drink1DialogueLines;
+
+    [Header("Drink 2 Dialogue Lines")]
+    [TextArea(2, 4)]
+    public string[] drink2DialogueLines;
+
+    [Header("Shake Mini Game (Step 8)")]
+    public GameObject shakeMiniGamePanel;
+    public Image shakeGlassImage;
+    public float shakeRequiredPathLength = 1200f;
+    public Vector2 shakeGlassOffset = Vector2.zero;
+
     [Header("Dialogue UI")]
     public DialogueController dialogueController;
 
@@ -40,35 +60,74 @@ public class UIManager : MonoBehaviour
     public Transform additiveProcessParent;
     public Transform magicProcessParent;
 
-    [Header("Result Screen UI")]
+    [Header("Additive Process (Step 6) - Fixed 3 Buttons")]
+    public Button[] additiveProcessButtons = new Button[3];
+    public ItemData[] additiveProcessItems = new ItemData[3];
+    public int correctAdditiveProcessIndex = 0;
+
+    [Header("Wrong Selection Feedback")]
+    public GameObject errorImagePrefab;
+    public Transform errorPopupParent;
+
+    [Header("Result Screen UI (Legacy ResultScene, unused for flow=2)")]
     public TextMeshProUGUI resultText;
     public TextMeshProUGUI detailText;
 
-    [Header("Step Correct Answers (Step 3/4/5/7/9) - by Item Name")]
-    public string correctGlassItemName;          // Step 3
+    // ===== Active correct answers (used by IsSelectionCorrectForStep) =====
+    [Header("Step Correct Answers (Active Set) - by Item Name")]
+    public string correctGlassItemName;
     public bool allowNoSelectionAsCorrect_Glass;
 
-    public string correctBaseLiquorItemName;     // Step 4
+    public string correctBaseLiquorItemName;
     public bool allowNoSelectionAsCorrect_BaseLiquor;
 
-    public string correctAdditiveItemName;       // Step 5
+    public string correctAdditiveItemName;
     public bool allowNoSelectionAsCorrect_Additive;
 
-    public string correctMagicMaterialItemName;  // Step 7
+    public string correctMagicMaterialItemName;
     public bool allowNoSelectionAsCorrect_MagicMaterial;
 
-    public string correctDecorationItemName;     // Step 9
+    public string correctDecorationItemName;
     public bool allowNoSelectionAsCorrect_Decoration;
 
-    [Header("Wrong Selection Feedback")]
-    public GameObject errorPopupPrefab;          // prefab with TimeDestroySelf
-    public Transform errorPopupParent;           // optional UI parent
+    // ===== Drink 1 correct answers =====
+    [Header("Drink 1 Correct Answers - by Item Name")]
+    public string drink1_correctGlassItemName;
+    public bool drink1_allowNoSelectionAsCorrect_Glass;
+    public string drink1_correctBaseLiquorItemName;
+    public bool drink1_allowNoSelectionAsCorrect_BaseLiquor;
+    public string drink1_correctAdditiveItemName;
+    public bool drink1_allowNoSelectionAsCorrect_Additive;
+    public string drink1_correctMagicMaterialItemName;
+    public bool drink1_allowNoSelectionAsCorrect_MagicMaterial;
+    public string drink1_correctDecorationItemName;
+    public bool drink1_allowNoSelectionAsCorrect_Decoration;
+
+    // ===== Drink 2 correct answers =====
+    [Header("Drink 2 Correct Answers - by Item Name")]
+    public string drink2_correctGlassItemName;
+    public bool drink2_allowNoSelectionAsCorrect_Glass;
+    public string drink2_correctBaseLiquorItemName;
+    public bool drink2_allowNoSelectionAsCorrect_BaseLiquor;
+    public string drink2_correctAdditiveItemName;
+    public bool drink2_allowNoSelectionAsCorrect_Additive;
+    public string drink2_correctMagicMaterialItemName;
+    public bool drink2_allowNoSelectionAsCorrect_MagicMaterial;
+    public string drink2_correctDecorationItemName;
+    public bool drink2_allowNoSelectionAsCorrect_Decoration;
 
     private readonly List<ItemButton> _spawnedItemButtons = new List<ItemButton>();
 
-    // Hover follow cache
+    // Hover-follow cached refs
     private Canvas _rootCanvas;
     private RectTransform _hoverRect;
+
+    // Shake minigame state
+    private bool _shakeRunning;
+    private float _shakeAccumulatedLength;
+    private Vector2 _shakeLastMouseScreenPos;
+    private System.Action _shakeOnFinished;
+    private bool _shakeIgnoreNextDelta;
 
     private void Awake()
     {
@@ -77,6 +136,8 @@ public class UIManager : MonoBehaviour
 
         if (additiveProcessPanel != null) additiveProcessPanel.SetActive(false);
         if (magicProcessPanel != null) magicProcessPanel.SetActive(false);
+        if (shakeMiniGamePanel != null) shakeMiniGamePanel.SetActive(false);
+        if (resultPanel != null) resultPanel.SetActive(false);
 
         if (dialogueController != null)
             dialogueController.gameObject.SetActive(true);
@@ -101,77 +162,78 @@ public class UIManager : MonoBehaviour
     private void Update()
     {
         UpdateHoverPanelFollowMouse();
+        UpdateShakeMiniGame();
     }
 
-    private void CacheHoverPanel()
+    // ===== Result Panel =====
+    public void ShowResultPanelForSeconds(float seconds, System.Action onDone)
     {
-        _rootCanvas = GetComponentInParent<Canvas>();
-        if (_rootCanvas == null)
-            _rootCanvas = FindFirstObjectByType<Canvas>();
-
-        if (itemHoverPanel != null)
-            _hoverRect = itemHoverPanel.GetComponent<RectTransform>();
+        StartCoroutine(CoShowResultPanel(seconds, onDone));
     }
 
-    // Prevent hover panel from stealing pointer and causing flicker.
-    private void ConfigureHoverPanelRaycasts()
+    private IEnumerator CoShowResultPanel(float seconds, System.Action onDone)
     {
-        if (itemHoverPanel == null)
-            return;
+        if (resultPanel != null) resultPanel.SetActive(true);
 
-        var cg = itemHoverPanel.GetComponent<CanvasGroup>();
-        if (cg == null) cg = itemHoverPanel.AddComponent<CanvasGroup>();
-        cg.blocksRaycasts = false;
-        cg.interactable = false;
+        if (resultImage != null && BartenderGameData.Instance != null)
+        {
+            resultImage.sprite = (BartenderGameData.Instance.drinkIndex == 0) ? drink1ResultSprite : drink2ResultSprite;
+        }
 
-        foreach (var g in itemHoverPanel.GetComponentsInChildren<Graphic>(true))
-            g.raycastTarget = false;
+        yield return new WaitForSeconds(seconds);
+
+        if (resultPanel != null) resultPanel.SetActive(false);
+        onDone?.Invoke();
     }
 
-    private void UpdateHoverPanelFollowMouse()
+    // ===== Drink config switching =====
+    private void ApplyCorrectConfigForCurrentDrink()
     {
-        if (itemHoverPanel == null || _hoverRect == null || !itemHoverPanel.activeSelf)
-            return;
+        int idx = BartenderGameData.Instance != null ? BartenderGameData.Instance.drinkIndex : 0;
 
-        if (_rootCanvas == null)
-            return;
+        if (idx == 0)
+        {
+            correctGlassItemName = drink1_correctGlassItemName;
+            allowNoSelectionAsCorrect_Glass = drink1_allowNoSelectionAsCorrect_Glass;
 
-        // Only handle Screen Space canvases here (most common UI setup).
-        if (_rootCanvas.renderMode == RenderMode.WorldSpace)
-            return;
+            correctBaseLiquorItemName = drink1_correctBaseLiquorItemName;
+            allowNoSelectionAsCorrect_BaseLiquor = drink1_allowNoSelectionAsCorrect_BaseLiquor;
 
-        RectTransform canvasRect = _rootCanvas.transform as RectTransform;
-        Camera cam = _rootCanvas.renderMode == RenderMode.ScreenSpaceCamera ? _rootCanvas.worldCamera : null;
+            correctAdditiveItemName = drink1_correctAdditiveItemName;
+            allowNoSelectionAsCorrect_Additive = drink1_allowNoSelectionAsCorrect_Additive;
 
-        Vector2 screenPos = (Vector2)Input.mousePosition + hoverPanelOffset;
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPos, cam, out Vector2 localPos);
-        _hoverRect.anchoredPosition = localPos;
+            correctMagicMaterialItemName = drink1_correctMagicMaterialItemName;
+            allowNoSelectionAsCorrect_MagicMaterial = drink1_allowNoSelectionAsCorrect_MagicMaterial;
 
-        if (clampHoverPanelToCanvas)
-            ClampRectToCanvas(canvasRect, _hoverRect);
+            correctDecorationItemName = drink1_correctDecorationItemName;
+            allowNoSelectionAsCorrect_Decoration = drink1_allowNoSelectionAsCorrect_Decoration;
+        }
+        else
+        {
+            correctGlassItemName = drink2_correctGlassItemName;
+            allowNoSelectionAsCorrect_Glass = drink2_allowNoSelectionAsCorrect_Glass;
+
+            correctBaseLiquorItemName = drink2_correctBaseLiquorItemName;
+            allowNoSelectionAsCorrect_BaseLiquor = drink2_allowNoSelectionAsCorrect_BaseLiquor;
+
+            correctAdditiveItemName = drink2_correctAdditiveItemName;
+            allowNoSelectionAsCorrect_Additive = drink2_allowNoSelectionAsCorrect_Additive;
+
+            correctMagicMaterialItemName = drink2_correctMagicMaterialItemName;
+            allowNoSelectionAsCorrect_MagicMaterial = drink2_allowNoSelectionAsCorrect_MagicMaterial;
+
+            correctDecorationItemName = drink2_correctDecorationItemName;
+            allowNoSelectionAsCorrect_Decoration = drink2_allowNoSelectionAsCorrect_Decoration;
+        }
     }
 
-    private static void ClampRectToCanvas(RectTransform canvasRect, RectTransform tooltipRect)
+    private string[] GetDialogueLinesForCurrentDrink()
     {
-        Canvas.ForceUpdateCanvases();
-
-        Vector2 canvasSize = canvasRect.rect.size;
-        Vector2 tooltipSize = tooltipRect.rect.size;
-        Vector2 pivot = tooltipRect.pivot;
-
-        Vector2 pos = tooltipRect.anchoredPosition;
-
-        float minX = -canvasSize.x * 0.5f + tooltipSize.x * pivot.x;
-        float maxX = canvasSize.x * 0.5f - tooltipSize.x * (1f - pivot.x);
-        float minY = -canvasSize.y * 0.5f + tooltipSize.y * pivot.y;
-        float maxY = canvasSize.y * 0.5f - tooltipSize.y * (1f - pivot.y);
-
-        pos.x = Mathf.Clamp(pos.x, minX, maxX);
-        pos.y = Mathf.Clamp(pos.y, minY, maxY);
-
-        tooltipRect.anchoredPosition = pos;
+        int idx = BartenderGameData.Instance != null ? BartenderGameData.Instance.drinkIndex : 0;
+        return idx == 0 ? (drink1DialogueLines ?? new string[0]) : (drink2DialogueLines ?? new string[0]);
     }
 
+    // ===== Existing public APIs =====
     public void SetNextButtonVisible(bool visible)
     {
         if (nextButton != null)
@@ -184,13 +246,18 @@ public class UIManager : MonoBehaviour
             nextButton.interactable = interactable;
     }
 
-    public void ShowWrongSelectionPopup()
+    private void SpawnErrorImage()
     {
-        if (errorPopupPrefab == null)
+        if (errorImagePrefab == null)
             return;
 
         Transform parent = errorPopupParent != null ? errorPopupParent : transform;
-        Instantiate(errorPopupPrefab, parent, false);
+        Instantiate(errorImagePrefab, parent, false);
+    }
+
+    public void ShowWrongSelectionPopup()
+    {
+        SpawnErrorImage();
     }
 
     public void UpdateSelectionVisual(ItemData selected)
@@ -227,7 +294,6 @@ public class UIManager : MonoBehaviour
         return string.Equals(selected.itemName, correctItemName, System.StringComparison.Ordinal);
     }
 
-    // Hover info
     public void ShowItemHoverInfo(ItemData item)
     {
         if (item == null) return;
@@ -245,7 +311,6 @@ public class UIManager : MonoBehaviour
         if (itemHoverPanel != null)
             itemHoverPanel.SetActive(true);
 
-        // Position immediately so it doesn't "jump" next frame
         UpdateHoverPanelFollowMouse();
     }
 
@@ -271,25 +336,38 @@ public class UIManager : MonoBehaviour
             UpdateStepUI(BartenderGameData.Instance.currentStep);
     }
 
+    // NOTE: StartDialogue now uses per-drink dialogue + per-drink correct config
     public void StartDialogue(System.Action onFinished)
     {
         ClearAllItemButtons(itemButtonParent);
         if (additiveProcessPanel != null) additiveProcessPanel.SetActive(false);
         if (magicProcessPanel != null) magicProcessPanel.SetActive(false);
+        if (shakeMiniGamePanel != null) shakeMiniGamePanel.SetActive(false);
+        if (resultPanel != null) resultPanel.SetActive(false);
 
         HideItemHoverInfo();
         SetNextButtonVisible(false);
 
         stepText.text = "Current Step: Dialogue";
 
-        if (dialogueController != null) dialogueController.PlayConfigured(onFinished);
-        else onFinished?.Invoke();
+        ApplyCorrectConfigForCurrentDrink();
+
+        if (dialogueController != null)
+            dialogueController.PlayLines(GetDialogueLinesForCurrentDrink(), onFinished);
+        else
+            onFinished?.Invoke();
     }
 
     public void UpdateStepUI(int step)
     {
         if (additiveProcessPanel != null) additiveProcessPanel.SetActive(false);
         if (magicProcessPanel != null) magicProcessPanel.SetActive(false);
+        if (shakeMiniGamePanel != null) shakeMiniGamePanel.SetActive(false);
+        if (resultPanel != null) resultPanel.SetActive(false);
+
+        _shakeRunning = false;
+        _shakeOnFinished = null;
+        _shakeIgnoreNextDelta = false;
 
         ClearAllItemButtons(itemButtonParent);
         HideItemHoverInfo();
@@ -297,13 +375,12 @@ public class UIManager : MonoBehaviour
         bool needNext = step == 3 || step == 4 || step == 5 || step == 7 || step == 9;
         SetNextButtonVisible(needNext);
 
-        // If "no selection is correct", Next should start enabled.
         bool canNextWithoutSelection = needNext && IsSelectionCorrectForStep(step, null);
         SetNextButtonInteractable(canNextWithoutSelection);
 
         string[] stepNames = {
             "Main Menu", "Cutscene", "Dialogue", "Select Glass", "Select Base Liquor", "Select Additives",
-            "Process Additives", "Select Magic Ingredients", "Process Magic Mix", "Select Decoration"
+            "Process Additives", "Select Magic Ingredients", "Shake Mini Game", "Select Decoration"
         };
 
         stepText.text = (step >= 0 && step < stepNames.Length)
@@ -338,18 +415,126 @@ public class UIManager : MonoBehaviour
         UpdateSelectionVisual(null);
     }
 
+    // Step 6: Show Additive Process Panel with 3 fixed buttons
     public void ShowAdditiveProcessPanel()
     {
         ClearAllItemButtons(itemButtonParent);
-        if (additiveProcessPanel != null) additiveProcessPanel.SetActive(true);
-
         HideItemHoverInfo();
         SetNextButtonVisible(false);
 
-        List<ItemData> processItems = BartenderGameData.Instance.GetItemsByType(ItemType.AdditiveProcess);
-        GenerateItemButtons(processItems, additiveProcessParent);
+        if (additiveProcessPanel != null)
+            additiveProcessPanel.SetActive(true);
+
+        for (int i = 0; i < additiveProcessButtons.Length; i++)
+        {
+            int index = i;
+
+            if (additiveProcessButtons[index] == null)
+                continue;
+
+            additiveProcessButtons[index].onClick.RemoveAllListeners();
+            additiveProcessButtons[index].onClick.AddListener(() =>
+            {
+                if (index == correctAdditiveProcessIndex)
+                {
+                    ItemData processItem = (additiveProcessItems != null && index < additiveProcessItems.Length)
+                        ? additiveProcessItems[index]
+                        : null;
+
+                    if (processItem == null)
+                    {
+                        SpawnErrorImage();
+                        return;
+                    }
+
+                    GameManager.Instance.SelectItem(processItem);
+                }
+                else
+                {
+                    SpawnErrorImage();
+                }
+            });
+        }
     }
 
+    public void StartShakeMiniGame(System.Action onFinished)
+    {
+        ClearAllItemButtons(itemButtonParent);
+        HideItemHoverInfo();
+        SetNextButtonVisible(false);
+
+        if (additiveProcessPanel != null) additiveProcessPanel.SetActive(false);
+        if (magicProcessPanel != null) magicProcessPanel.SetActive(false);
+
+        if (shakeMiniGamePanel != null) shakeMiniGamePanel.SetActive(true);
+
+        _shakeRunning = true;
+        _shakeAccumulatedLength = 0f;
+        _shakeLastMouseScreenPos = Input.mousePosition;
+        _shakeIgnoreNextDelta = true;
+        _shakeOnFinished = onFinished;
+
+        UpdateShakeGlassPosition(_shakeLastMouseScreenPos);
+    }
+
+    private void UpdateShakeMiniGame()
+    {
+        if (!_shakeRunning)
+            return;
+
+        Vector2 cur = Input.mousePosition;
+
+        if (_shakeIgnoreNextDelta)
+        {
+            _shakeLastMouseScreenPos = cur;
+            _shakeIgnoreNextDelta = false;
+            UpdateShakeGlassPosition(cur);
+            return;
+        }
+
+        float delta = Vector2.Distance(cur, _shakeLastMouseScreenPos);
+        delta = Mathf.Clamp(delta, 0f, 200f);
+
+        _shakeAccumulatedLength += delta;
+        _shakeLastMouseScreenPos = cur;
+
+        UpdateShakeGlassPosition(cur);
+
+        if (_shakeAccumulatedLength >= shakeRequiredPathLength)
+            EndShakeMiniGame();
+    }
+
+    private void UpdateShakeGlassPosition(Vector2 mouseScreenPos)
+    {
+        if (shakeGlassImage == null || _rootCanvas == null)
+            return;
+
+        if (_rootCanvas.renderMode == RenderMode.WorldSpace)
+            return;
+
+        RectTransform canvasRect = _rootCanvas.transform as RectTransform;
+        Camera cam = _rootCanvas.renderMode == RenderMode.ScreenSpaceCamera ? _rootCanvas.worldCamera : null;
+
+        RectTransform glassRect = shakeGlassImage.rectTransform;
+
+        Vector2 screenPos = mouseScreenPos + shakeGlassOffset;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPos, cam, out Vector2 localPos);
+        glassRect.anchoredPosition = localPos;
+    }
+
+    private void EndShakeMiniGame()
+    {
+        _shakeRunning = false;
+
+        if (shakeMiniGamePanel != null)
+            shakeMiniGamePanel.SetActive(false);
+
+        var cb = _shakeOnFinished;
+        _shakeOnFinished = null;
+        cb?.Invoke();
+    }
+
+    // legacy UI (not used by shake minigame flow)
     public void ShowMagicProcessPanel()
     {
         ClearAllItemButtons(itemButtonParent);
@@ -389,26 +574,77 @@ public class UIManager : MonoBehaviour
         _spawnedItemButtons.Clear();
     }
 
+    private void CacheHoverPanel()
+    {
+        _rootCanvas = GetComponentInParent<Canvas>();
+        if (_rootCanvas == null)
+            _rootCanvas = FindFirstObjectByType<Canvas>();
+
+        if (itemHoverPanel != null)
+            _hoverRect = itemHoverPanel.GetComponent<RectTransform>();
+    }
+
+    private void UpdateHoverPanelFollowMouse()
+    {
+        if (itemHoverPanel == null || _hoverRect == null || !itemHoverPanel.activeSelf)
+            return;
+
+        if (_rootCanvas == null)
+            return;
+
+        if (_rootCanvas.renderMode == RenderMode.WorldSpace)
+            return;
+
+        RectTransform canvasRect = _rootCanvas.transform as RectTransform;
+        Camera cam = _rootCanvas.renderMode == RenderMode.ScreenSpaceCamera ? _rootCanvas.worldCamera : null;
+
+        Vector2 screenPos = (Vector2)Input.mousePosition + hoverPanelOffset;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPos, cam, out Vector2 localPos);
+        _hoverRect.anchoredPosition = localPos;
+
+        if (clampHoverPanelToCanvas)
+            ClampRectToCanvas(canvasRect, _hoverRect);
+    }
+
+    private static void ClampRectToCanvas(RectTransform canvasRect, RectTransform tooltipRect)
+    {
+        Canvas.ForceUpdateCanvases();
+
+        Vector2 canvasSize = canvasRect.rect.size;
+        Vector2 tooltipSize = tooltipRect.rect.size;
+        Vector2 pivot = tooltipRect.pivot;
+
+        Vector2 pos = tooltipRect.anchoredPosition;
+
+        float minX = -canvasSize.x * 0.5f + tooltipSize.x * pivot.x;
+        float maxX = canvasSize.x * 0.5f - tooltipSize.x * (1f - pivot.x);
+        float minY = -canvasSize.y * 0.5f + tooltipSize.y * pivot.y;
+        float maxY = canvasSize.y * 0.5f - tooltipSize.y * (1f - pivot.y);
+
+        pos.x = Mathf.Clamp(pos.x, minX, maxX);
+        pos.y = Mathf.Clamp(pos.y, minY, maxY);
+
+        tooltipRect.anchoredPosition = pos;
+    }
+
+    private void ConfigureHoverPanelRaycasts()
+    {
+        if (itemHoverPanel == null)
+            return;
+
+        var cg = itemHoverPanel.GetComponent<CanvasGroup>();
+        if (cg == null) cg = itemHoverPanel.AddComponent<CanvasGroup>();
+        cg.blocksRaycasts = false;
+        cg.interactable = false;
+
+        foreach (var g in itemHoverPanel.GetComponentsInChildren<Graphic>(true))
+            g.raycastTarget = false;
+    }
+
     private void InitResultUI()
     {
-        Cocktail cocktail = BartenderGameData.Instance.currentCocktail;
-        Customer customer = BartenderGameData.Instance.currentCustomer;
-
-        if (BartenderGameData.Instance.isWin)
-        {
-            resultText.text = $"🎉 Congratulations! {customer.name} loves your drink!";
-            resultText.color = Color.green;
-        }
-        else
-        {
-            resultText.text = $"😞 Oops! {customer.name} is not satisfied with the drink!";
-            resultText.color = Color.red;
-        }
-
-        detailText.text =
-            $"Customer Requirements: Alcohol {customer.needStrong} | Bitterness {customer.needBitter} | Thickness {customer.needThick}\n" +
-            $"Your Creation: Alcohol {cocktail.strong} | Bitterness {cocktail.bitter} | Thickness {cocktail.thick}\n" +
-            $"Error Margin: Alcohol {BartenderGameData.Instance.errorValues[0]} | Bitterness {BartenderGameData.Instance.errorValues[1]} | Thickness {BartenderGameData.Instance.errorValues[2]} (Allowed: ±2)";
+        // Using flow=2: resultPanel in GameScene is used. ResultScene can be ignored.
+        // Keep empty to avoid referencing removed fields.
     }
 
     public void OnRestartButtonClicked()
