@@ -1018,7 +1018,7 @@ MonoBehaviour:
     bitterValue: 0
     thickValue: 0
     description: 
-    itemSprite: {fileID: 21300000, guid: f6e0fd6acb1913843a0b5f31eb76702f, type: 3}
+    itemSprite: {fileID: 21300000, guid: 1287f35a64ed5334a83485224229d6d1, type: 3}
   - itemName: glass02
     itemType: 0
     strongValue: 0
@@ -1032,7 +1032,7 @@ MonoBehaviour:
     bitterValue: 0
     thickValue: 0
     description: 
-    itemSprite: {fileID: 21300000, guid: a33f33c3f8b3ca3469c75affa1fd8fcf, type: 3}
+    itemSprite: {fileID: 21300000, guid: 834de95d5eb68484cac666ed8398b3b6, type: 3}
   - itemName: glass04
     itemType: 0
     strongValue: 0
@@ -1067,7 +1067,7 @@ MonoBehaviour:
     bitterValue: 3
     thickValue: 3
     description: 
-    itemSprite: {fileID: 21300000, guid: e62ea6e835b4db14890d70489464ca48, type: 3}
+    itemSprite: {fileID: 21300000, guid: 1014154134c499e4486a27f00661922d, type: 3}
   - itemName: base03
     itemType: 1
     strongValue: 3
@@ -1081,7 +1081,7 @@ MonoBehaviour:
     bitterValue: 3
     thickValue: 3
     description: 
-    itemSprite: {fileID: 21300000, guid: 1014154134c499e4486a27f00661922d, type: 3}
+    itemSprite: {fileID: 21300000, guid: e62ea6e835b4db14890d70489464ca48, type: 3}
   - itemName: base05
     itemType: 1
     strongValue: 3
@@ -1158,7 +1158,7 @@ MonoBehaviour:
     bitterValue: 3
     thickValue: 3
     description: 
-    itemSprite: {fileID: 21300000, guid: 5927f3dca621ce740969547d5642e5bf, type: 3}
+    itemSprite: {fileID: 21300000, guid: b9220f8be84504443bda144d91b10b03, type: 3}
   - itemName: magic04
     itemType: 3
     strongValue: 3
@@ -1179,7 +1179,7 @@ MonoBehaviour:
     bitterValue: 3
     thickValue: 3
     description: 
-    itemSprite: {fileID: 21300000, guid: 5743dd5b2230c5641b13752a6cbe5960, type: 3}
+    itemSprite: {fileID: 21300000, guid: 029c2a90cb4cfac448a1ab38433c5610, type: 3}
   - itemName: deco01
     itemType: 4
     strongValue: 3
@@ -1223,8 +1223,7 @@ MonoBehaviour:
     description: 
     itemSprite: {fileID: 21300000, guid: ca1bde356df33124f94018a50b0636e0, type: 3}
   currentStep: 0
-  isWin: 0
-  errorValues: 
+  drinkIndex: 0
   tempSelectedAdditive:
     itemName: 
     itemType: 0

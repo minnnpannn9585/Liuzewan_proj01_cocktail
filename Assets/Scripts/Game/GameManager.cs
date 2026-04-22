@@ -103,8 +103,6 @@ public class GameManager : MonoBehaviour
                     bool isCorrect = UIManager.Instance.IsSelectionCorrectForStep(step, selectedItem);
                     UIManager.Instance.SetNextButtonInteractable(isCorrect);
 
-                    // 只有在“选择了一个具体物品且它是错的”时才提示错误；
-                    // 取消选择(null)不弹错（并且可能允许空选为正确）
                     if (selectedItem != null && !isCorrect)
                         UIManager.Instance.ShowWrongSelectionPopup();
                 }
@@ -117,7 +115,7 @@ public class GameManager : MonoBehaviour
                 break;
 
             case 8:
-                HandleMagicProcess(selectedItem);
+                // 第8步是 shake 小游戏，不再通过选按钮处理
                 break;
         }
     }
@@ -127,19 +125,24 @@ public class GameManager : MonoBehaviour
         int step = BartenderGameData.Instance.currentStep;
         ItemData selected = BartenderGameData.Instance.tempSelectedItem;
 
-        if (UIManager.Instance != null)
+        // 仅对“选择类步骤”做正确性校验
+        bool needSelectionValidation = step == 3 || step == 4 || step == 5 || step == 7 || step == 9;
+        if (needSelectionValidation)
         {
-            bool isCorrect = UIManager.Instance.IsSelectionCorrectForStep(step, selected);
-            if (!isCorrect)
+            if (UIManager.Instance != null)
             {
-                UIManager.Instance.ShowWrongSelectionPopup();
-                UIManager.Instance.SetNextButtonInteractable(false);
-                return;
+                bool isCorrect = UIManager.Instance.IsSelectionCorrectForStep(step, selected);
+                if (!isCorrect)
+                {
+                    UIManager.Instance.ShowWrongSelectionPopup();
+                    UIManager.Instance.SetNextButtonInteractable(false);
+                    return;
+                }
             }
-        }
-        else
-        {
-            if (selected == null) return;
+            else
+            {
+                if (selected == null) return;
+            }
         }
 
         switch (step)
@@ -161,7 +164,19 @@ public class GameManager : MonoBehaviour
 
             case 7:
                 if (selected != null) HandleMagicMaterialSelection(selected);
-                else { BartenderGameData.Instance.currentStep = 9; UIManager.Instance.UpdateStepUI(9); }
+                else
+                {
+                    BartenderGameData.Instance.tempSelectedMagic = null;
+                    BartenderGameData.Instance.currentStep = 8;
+                    UIManager.Instance.UpdateStepUI(8);
+                }
+                break;
+
+            case 8:
+                // shake 完成后进入第9步
+                BartenderGameData.Instance.currentCocktail.RecordStep(6, "摇晃调制完成");
+                BartenderGameData.Instance.currentStep = 9;
+                UIManager.Instance.UpdateStepUI(9);
                 break;
 
             case 9:
@@ -217,23 +232,12 @@ public class GameManager : MonoBehaviour
     private void HandleMagicMaterialSelection(ItemData magic)
     {
         BartenderGameData.Instance.tempSelectedMagic = magic;
+        BartenderGameData.Instance.currentCocktail.AddItemAttributes(magic);
+        BartenderGameData.Instance.currentCocktail.RecordStep(5, $"选择魔法材料：{magic.itemName}");
+
+        // 关键修复：进入第8步并触发 shake 小游戏
         BartenderGameData.Instance.currentStep = 8;
-        UIManager.Instance.ShowMagicProcessPanel();
-    }
-
-    private void HandleMagicProcess(ItemData process)
-    {
-        BartenderGameData.Instance.currentCocktail.AddItemAttributes(BartenderGameData.Instance.tempSelectedMagic);
-        BartenderGameData.Instance.currentCocktail.AddItemAttributes(process);
-
-        BartenderGameData.Instance.currentCocktail.RecordStep(5, $"选择魔法材料：{BartenderGameData.Instance.tempSelectedMagic.itemName}");
-        BartenderGameData.Instance.currentCocktail.RecordStep(6, $"魔法操作：{process.itemName}");
-
-        BartenderGameData.Instance.tempSelectedMagic = null;
-
-        BartenderGameData.Instance.currentStep = 9;
-        BartenderGameData.Instance.tempSelectedItem = null;
-        UIManager.Instance.UpdateStepUI(9);
+        UIManager.Instance.UpdateStepUI(8);
     }
 
     private void HandleDecorationSelection(ItemData decoration)
@@ -245,7 +249,6 @@ public class GameManager : MonoBehaviour
 
     private void HandleDrinkFinished()
     {
-        // Flow=2: show result panel, then either start drink2 or finish.
         UIManager.Instance.ShowResultPanelForSeconds(5f, () =>
         {
             if (BartenderGameData.Instance.drinkIndex == 0)
@@ -255,7 +258,6 @@ public class GameManager : MonoBehaviour
             }
             else
             {
-                // 两杯都完成：回主菜单（或你也可以停留在当前场景）
                 BackToStart();
             }
         });

@@ -360,60 +360,74 @@ public class UIManager : MonoBehaviour
 
     public void UpdateStepUI(int step)
     {
-        if (additiveProcessPanel != null) additiveProcessPanel.SetActive(false);
-        if (magicProcessPanel != null) magicProcessPanel.SetActive(false);
-        if (shakeMiniGamePanel != null) shakeMiniGamePanel.SetActive(false);
-        if (resultPanel != null) resultPanel.SetActive(false);
+    if (additiveProcessPanel != null) additiveProcessPanel.SetActive(false);
+    if (magicProcessPanel != null) magicProcessPanel.SetActive(false);
 
+    // 只在非第8步时隐藏 shake 面板并重置状态
+    if (step != 8)
+    {
+        if (shakeMiniGamePanel != null) shakeMiniGamePanel.SetActive(false);
         _shakeRunning = false;
         _shakeOnFinished = null;
         _shakeIgnoreNextDelta = false;
-
-        ClearAllItemButtons(itemButtonParent);
-        HideItemHoverInfo();
-
-        bool needNext = step == 3 || step == 4 || step == 5 || step == 7 || step == 9;
-        SetNextButtonVisible(needNext);
-
-        bool canNextWithoutSelection = needNext && IsSelectionCorrectForStep(step, null);
-        SetNextButtonInteractable(canNextWithoutSelection);
-
-        string[] stepNames = {
-            "Main Menu", "Cutscene", "Dialogue", "Select Glass", "Select Base Liquor", "Select Additives",
-            "Process Additives", "Select Magic Ingredients", "Shake Mini Game", "Select Decoration"
-        };
-
-        stepText.text = (step >= 0 && step < stepNames.Length)
-            ? $"Current Step: {stepNames[step]}"
-            : $"Current Step: {step}";
-
-        List<ItemData> items;
-        switch (step)
-        {
-            case 3:
-                items = BartenderGameData.Instance.GetItemsByType(ItemType.Glass);
-                GenerateItemButtons(items, itemButtonParent);
-                break;
-            case 4:
-                items = BartenderGameData.Instance.GetItemsByType(ItemType.BaseLiquor);
-                GenerateItemButtons(items, itemButtonParent);
-                break;
-            case 5:
-                items = BartenderGameData.Instance.GetItemsByType(ItemType.Additive);
-                GenerateItemButtons(items, itemButtonParent);
-                break;
-            case 7:
-                items = BartenderGameData.Instance.GetItemsByType(ItemType.MagicMaterial);
-                GenerateItemButtons(items, itemButtonParent);
-                break;
-            case 9:
-                items = BartenderGameData.Instance.GetItemsByType(ItemType.Decoration);
-                GenerateItemButtons(items, itemButtonParent);
-                break;
-        }
-
-        UpdateSelectionVisual(null);
     }
+
+    if (resultPanel != null) resultPanel.SetActive(false);
+
+    ClearAllItemButtons(itemButtonParent);
+    HideItemHoverInfo();
+
+    bool needNext = step == 3 || step == 4 || step == 5 || step == 7 || step == 9;
+    SetNextButtonVisible(needNext);
+
+    bool canNextWithoutSelection = needNext && IsSelectionCorrectForStep(step, null);
+    SetNextButtonInteractable(canNextWithoutSelection);
+
+    string[] stepNames = {
+        "Main Menu", "Cutscene", "Dialogue", "Select Glass", "Select Base Liquor", "Select Additives",
+        "Process Additives", "Select Magic Ingredients", "Shake Mini Game", "Select Decoration"
+    };
+
+    stepText.text = (step >= 0 && step < stepNames.Length)
+        ? $"Current Step: {stepNames[step]}"
+        : $"Current Step: {step}";
+
+    List<ItemData> items;
+    switch (step)
+    {
+        case 3:
+            items = BartenderGameData.Instance.GetItemsByType(ItemType.Glass);
+            GenerateItemButtons(items, itemButtonParent);
+            break;
+        case 4:
+            items = BartenderGameData.Instance.GetItemsByType(ItemType.BaseLiquor);
+            GenerateItemButtons(items, itemButtonParent);
+            break;
+        case 5:
+            items = BartenderGameData.Instance.GetItemsByType(ItemType.Additive);
+            GenerateItemButtons(items, itemButtonParent);
+            break;
+        case 7:
+            items = BartenderGameData.Instance.GetItemsByType(ItemType.MagicMaterial);
+            GenerateItemButtons(items, itemButtonParent);
+            break;
+        case 8:
+            // 启动 shake 小游戏，完成后通知 GameManager 进入下一步
+            StartShakeMiniGame(() =>
+            {
+                if (GameManager.Instance != null)
+                    GameManager.Instance.OnNextButtonClicked();
+            });
+            break;
+        case 9:
+            items = BartenderGameData.Instance.GetItemsByType(ItemType.Decoration);
+            GenerateItemButtons(items, itemButtonParent);
+            break;
+    }
+
+    UpdateSelectionVisual(null);
+}
+
 
     // Step 6: Show Additive Process Panel with 3 fixed buttons
     public void ShowAdditiveProcessPanel()

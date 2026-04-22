@@ -1354,7 +1354,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 100, y: 100}
+  m_SizeDelta: {x: 1920, y: 1080}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &537067594
 MonoBehaviour:
@@ -1376,7 +1376,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: cd62915018688467a8b9ba5dc690c7d9, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -4440,7 +4440,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1572996774
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4854,10 +4854,49 @@ MonoBehaviour:
   clampHoverPanelToCanvas: 1
   resultPanel: {fileID: 1572996773}
   resultImage: {fileID: 537067594}
-  drink1ResultSprite: {fileID: 0}
-  drink2ResultSprite: {fileID: 0}
-  drink1DialogueLines: []
-  drink2DialogueLines: []
+  drink1ResultSprite: {fileID: 21300000, guid: cd62915018688467a8b9ba5dc690c7d9, type: 3}
+  drink2ResultSprite: {fileID: 21300000, guid: add88a6594e284d078a90dc8525f351c, type: 3}
+  drink1DialogueLines:
+  - This midnight silence... it feels heavier than a century-old graveyard.
+  - Tell me, Witch. Does that crystal glass of yours hold anything... that can make
+    cold blood feel a heartbeat again?
+  - 'B: Welcome to the Midnight Tavern. The taste of life doesn''t come cheap, My
+    Lord.'
+  - I traded my soul to the abyss for a vow of protection. In return, I got this
+    never-ending curse.
+  - I stand on the ruins of time, watching glory fade and friends turn to dust. I
+    held the crumbling walls, but I couldn't hold onto my memories.
+  - "So, give me that spirit fermented under the blood-red moon. Make it thick and
+    bitter like memory itself\u2014something to stir the restless blood in my veins."
+  - Crush some thorny vines into it. I want a bitterness as heavy as rust. Let it
+    burn through this cold shell and remind me I still have a heart.
+  - "I remember thrones covered in gold\u2014the glory of decay. Add some glittering
+    powder to the mix. I want to see those golden scraps flicker one last time in
+    the dark."
+  - And serve it in your heaviest, oldest mug. A flimsy glass can't hold centuries
+    of solitude.
+  drink2DialogueLines:
+  - 'B: When ashes are relit, the rising dust always blurs the vision. What you see
+    now... Is it reality, or just a fever dream?'
+  - I don't know. Whenever my memories start to rot, a certain melody begins to echo
+    in my mind.
+  - "Centuries of time have twisted in my head. I can no longer tell my vows apart
+    from the devil\u2019s whispers."
+  - Memories rush in like a tide, only to shatter into dust upon impact. My brightest
+    moments and darkest nightmares are strangled together. It's driving me mad.
+  - "I need a second drink\u2014one that can truly help me piece these shards of
+    memory back together. Give me the chill gentleness of midnight  to calm the storm
+    in my veins."
+  - "Pour into the liquor those blue blossoms that belong solely to the deep night
+    . Only when the petals are ground will that blue slowly seep into the drink,
+    allowing the stillness\u2026 to truly begin to flow."
+  - Then sprinkle in a handful of fallen stardust . I want to see the traces of time
+    flowing within this drink.
+  - "And most importantly... that clear, brittle, and razor-sharp herb. It will cut
+    through the tangled mess and put my displaced memories back in order. If it cannot
+    show me the truth, I\u2019d rather vanish into oblivion."
+  - Serve it in a vessel as elegant as a flute. I want to watch those fragments settle
+    quietly into the flow of time.
   shakeMiniGamePanel: {fileID: 1537749238}
   shakeGlassImage: {fileID: 113655713}
   shakeRequiredPathLength: 12000
