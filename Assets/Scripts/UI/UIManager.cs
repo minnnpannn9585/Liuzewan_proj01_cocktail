@@ -54,14 +54,29 @@ public class UIManager : MonoBehaviour
     [Header("Shake Mini Game (Step 8)")]
     public GameObject shakeMiniGamePanel;
     public Image shakeGlassImage;
+    [Tooltip("第二轮展示的Shake杯子图片")]
+    public Image shakeGlassImage2; // 新增第二阶段的杯子图片
     public float shakeRequiredPathLength = 1200f;
     public Vector2 shakeGlassOffset = Vector2.zero;
+
+    [Header("Shake Mini Game Sub-Panels")]
+    [Tooltip("第一轮展示的Shake子物体")]
+    public GameObject shakeMiniGameDrink1Child;
+    [Tooltip("第二轮展示的Shake子物体")]
+    public GameObject shakeMiniGameDrink2Child;
 
     [Header("Dialogue UI")]
     public DialogueController dialogueController;
 
     [Header("Popup Panels")]
     public GameObject additiveProcessPanel;
+    
+    [Header("Additive Process Sub-Panels")]
+    [Tooltip("第一轮展示的子物体")]
+    public GameObject additiveProcessDrink1Child;
+    [Tooltip("第二轮展示的子物体")]
+    public GameObject additiveProcessDrink2Child;
+
     public GameObject magicProcessPanel;
     public Transform additiveProcessParent;
     public Transform magicProcessParent;
@@ -198,28 +213,23 @@ public class UIManager : MonoBehaviour
 
         GameObject activeTransition = null;
 
-        // 根据当前的 drinkIndex 选择对应的动画数组
         int drinkIndex = BartenderGameData.Instance != null ? BartenderGameData.Instance.drinkIndex : 0;
         GameObject[] currentPanels = drinkIndex == 0 ? drink1StepTransitionPanels : drink2StepTransitionPanels;
 
-        // 获取对应的过渡面板
         if (currentPanels != null && targetStep >= 0 && targetStep < currentPanels.Length)
         {
             activeTransition = currentPanels[targetStep];
         }
 
-        // 如果当前步骤没有配置动画物体，直接进入下一步并跳出协程
         if (activeTransition == null)
         {
             onComplete?.Invoke();
             yield break;
         }
 
-        // 否则正常播放动画
         activeTransition.SetActive(true);
         activeTransition.transform.SetAsLastSibling();
 
-        // 确保最少等待0.1秒防止卡死
         yield return new WaitForSeconds(Mathf.Max(duration, 0.1f));
 
         if (activeTransition != null) activeTransition.SetActive(false);
@@ -495,6 +505,13 @@ public class UIManager : MonoBehaviour
         if (additiveProcessPanel != null)
             additiveProcessPanel.SetActive(true);
 
+        // 根据当前的轮次控制子物体的开关
+        int drinkIndex = BartenderGameData.Instance != null ? BartenderGameData.Instance.drinkIndex : 0;
+        if (additiveProcessDrink1Child != null)
+            additiveProcessDrink1Child.SetActive(drinkIndex == 0);
+        if (additiveProcessDrink2Child != null)
+            additiveProcessDrink2Child.SetActive(drinkIndex == 1);
+
         for (int i = 0; i < additiveProcessButtons.Length; i++)
         {
             int index = i;
@@ -507,8 +524,11 @@ public class UIManager : MonoBehaviour
             {
                 if (index == correctAdditiveProcessIndex)
                 {
-                    if (GameManager.Instance != null && index < additiveProcessItems.Length)
-                        GameManager.Instance.SelectItem(additiveProcessItems[index]);
+                    ItemData processItem = additiveProcessItems != null && index < additiveProcessItems.Length
+                        ? additiveProcessItems[index]
+                        : null;
+                    if (GameManager.Instance != null)
+                        GameManager.Instance.SelectItem(processItem);
                 }
                 else
                 {
@@ -528,6 +548,13 @@ public class UIManager : MonoBehaviour
         if (magicProcessPanel != null) magicProcessPanel.SetActive(false);
 
         if (shakeMiniGamePanel != null) shakeMiniGamePanel.SetActive(true);
+
+        // 根据当前的轮次控制 Shake 子物体的开关
+        int drinkIndex = BartenderGameData.Instance != null ? BartenderGameData.Instance.drinkIndex : 0;
+        if (shakeMiniGameDrink1Child != null)
+            shakeMiniGameDrink1Child.SetActive(drinkIndex == 0);
+        if (shakeMiniGameDrink2Child != null)
+            shakeMiniGameDrink2Child.SetActive(drinkIndex == 1);
 
         _shakeRunning = true;
         _shakeAccumulatedLength = 0f;
@@ -565,18 +592,27 @@ public class UIManager : MonoBehaviour
             EndShakeMiniGame();
     }
 
+    
+
     private void UpdateShakeGlassPosition(Vector2 mouseScreenPos)
     {
-        if (shakeGlassImage == null || _rootCanvas == null)
+        if (_rootCanvas == null)
             return;
 
         if (_rootCanvas.renderMode == RenderMode.WorldSpace)
             return;
 
+        // 根据当前的流程索引（第一杯还是第二杯）选择对应的杯子
+        int drinkIndex = BartenderGameData.Instance != null ? BartenderGameData.Instance.drinkIndex : 0;
+        Image activeGlassImage = drinkIndex == 0 ? shakeGlassImage : (shakeGlassImage2 != null ? shakeGlassImage2 : shakeGlassImage);
+
+        if (activeGlassImage == null)
+            return;
+
         RectTransform canvasRect = _rootCanvas.transform as RectTransform;
         Camera cam = _rootCanvas.renderMode == RenderMode.ScreenSpaceCamera ? _rootCanvas.worldCamera : null;
 
-        RectTransform glassRect = shakeGlassImage.rectTransform;
+        RectTransform glassRect = activeGlassImage.rectTransform;
 
         Vector2 screenPos = mouseScreenPos + shakeGlassOffset;
         RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPos, cam, out Vector2 localPos);

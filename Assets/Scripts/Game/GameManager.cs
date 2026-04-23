@@ -62,6 +62,7 @@ public class GameManager : MonoBehaviour
 
     private void EnterDialogueStep()
     {
+        Bgm.Instance.SwitchToGameBgm();
         BartenderGameData.Instance.currentStep = 2;
         UIManager.Instance.StartDialogue(EnterSelectGlassStep);
     }
