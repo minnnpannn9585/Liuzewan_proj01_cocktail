@@ -6,6 +6,8 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance;
 
     public float animationDuration = 2f;
+    [Header("Transition")]
+    public float transitionDuration = 2f;
 
     private void Awake()
     {
@@ -83,7 +85,6 @@ public class GameManager : MonoBehaviour
             case 7:
             case 9:
             {
-                // Toggle: click same item again to deselect
                 if (BartenderGameData.Instance.tempSelectedItem != null &&
                     selectedItem != null &&
                     BartenderGameData.Instance.tempSelectedItem.itemName == selectedItem.itemName)
@@ -125,7 +126,6 @@ public class GameManager : MonoBehaviour
         int step = BartenderGameData.Instance.currentStep;
         ItemData selected = BartenderGameData.Instance.tempSelectedItem;
 
-        // 仅对“选择类步骤”做正确性校验
         bool needSelectionValidation = step == 3 || step == 4 || step == 5 || step == 7 || step == 9;
         if (needSelectionValidation)
         {
@@ -149,17 +149,17 @@ public class GameManager : MonoBehaviour
         {
             case 3:
                 if (selected != null) HandleGlassSelection(selected);
-                else { BartenderGameData.Instance.currentStep = 4; UIManager.Instance.UpdateStepUI(4); }
+                else TransitionToStep(4);
                 break;
 
             case 4:
                 if (selected != null) HandleBaseLiquorSelection(selected);
-                else { BartenderGameData.Instance.currentStep = 5; UIManager.Instance.UpdateStepUI(5); }
+                else TransitionToStep(5);
                 break;
 
             case 5:
                 if (selected != null) HandleAdditiveSelection(selected);
-                else { BartenderGameData.Instance.currentStep = 7; UIManager.Instance.UpdateStepUI(7); }
+                else TransitionToStep(7);
                 break;
 
             case 7:
@@ -167,16 +167,13 @@ public class GameManager : MonoBehaviour
                 else
                 {
                     BartenderGameData.Instance.tempSelectedMagic = null;
-                    BartenderGameData.Instance.currentStep = 8;
-                    UIManager.Instance.UpdateStepUI(8);
+                    TransitionToStep(8);
                 }
                 break;
 
             case 8:
-                // shake 完成后进入第9步
                 BartenderGameData.Instance.currentCocktail.RecordStep(6, "摇晃调制完成");
-                BartenderGameData.Instance.currentStep = 9;
-                UIManager.Instance.UpdateStepUI(9);
+                TransitionToStep(9);
                 break;
 
             case 9:
@@ -191,27 +188,53 @@ public class GameManager : MonoBehaviour
             UIManager.Instance.UpdateSelectionVisual(null);
     }
 
+    private void TransitionToStep(int nextStep, System.Action onArrive = null)
+    {
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.ShowTransitionAnimation(nextStep, transitionDuration, () =>
+            {
+                BartenderGameData.Instance.currentStep = nextStep;
+                UIManager.Instance.UpdateStepUI(nextStep);
+                onArrive?.Invoke();
+            });
+        }
+        else
+        {
+            BartenderGameData.Instance.currentStep = nextStep;
+            onArrive?.Invoke();
+        }
+    }
+
     private void HandleGlassSelection(ItemData glass)
     {
         BartenderGameData.Instance.currentCocktail.AddItemAttributes(glass);
         BartenderGameData.Instance.currentCocktail.RecordStep(1, $"选择杯子：{glass.itemName}");
-        BartenderGameData.Instance.currentStep = 4;
-        UIManager.Instance.UpdateStepUI(4);
+        TransitionToStep(4);
     }
 
     private void HandleBaseLiquorSelection(ItemData baseLiquor)
     {
         BartenderGameData.Instance.currentCocktail.AddItemAttributes(baseLiquor);
         BartenderGameData.Instance.currentCocktail.RecordStep(2, $"选择基酒：{baseLiquor.itemName}");
-        BartenderGameData.Instance.currentStep = 5;
-        UIManager.Instance.UpdateStepUI(5);
+        TransitionToStep(5);
     }
 
     private void HandleAdditiveSelection(ItemData additive)
     {
         BartenderGameData.Instance.tempSelectedAdditive = additive;
-        BartenderGameData.Instance.currentStep = 6;
-        UIManager.Instance.ShowAdditiveProcessPanel();
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.ShowTransitionAnimation(6, transitionDuration, () =>
+            {
+                BartenderGameData.Instance.currentStep = 6;
+                UIManager.Instance.ShowAdditiveProcessPanel();
+            });
+        }
+        else
+        {
+            BartenderGameData.Instance.currentStep = 6;
+        }
     }
 
     private void HandleAdditiveProcess(ItemData process)
@@ -223,10 +246,9 @@ public class GameManager : MonoBehaviour
         BartenderGameData.Instance.currentCocktail.RecordStep(4, $"辅料加工：{process.itemName}");
 
         BartenderGameData.Instance.tempSelectedAdditive = null;
-
-        BartenderGameData.Instance.currentStep = 7;
         BartenderGameData.Instance.tempSelectedItem = null;
-        UIManager.Instance.UpdateStepUI(7);
+        
+        TransitionToStep(7);
     }
 
     private void HandleMagicMaterialSelection(ItemData magic)
@@ -235,9 +257,7 @@ public class GameManager : MonoBehaviour
         BartenderGameData.Instance.currentCocktail.AddItemAttributes(magic);
         BartenderGameData.Instance.currentCocktail.RecordStep(5, $"选择魔法材料：{magic.itemName}");
 
-        // 关键修复：进入第8步并触发 shake 小游戏
-        BartenderGameData.Instance.currentStep = 8;
-        UIManager.Instance.UpdateStepUI(8);
+        TransitionToStep(8);
     }
 
     private void HandleDecorationSelection(ItemData decoration)
@@ -248,6 +268,19 @@ public class GameManager : MonoBehaviour
     }
 
     private void HandleDrinkFinished()
+    {
+        if (UIManager.Instance != null)
+        {
+            // 播放最后一步（完成后）的过渡动画，索引为 10
+            UIManager.Instance.ShowTransitionAnimation(10, transitionDuration, ShowResultAndContinue);
+        }
+        else
+        {
+            ShowResultAndContinue();
+        }
+    }
+
+    private void ShowResultAndContinue()
     {
         UIManager.Instance.ShowResultPanelForSeconds(5f, () =>
         {

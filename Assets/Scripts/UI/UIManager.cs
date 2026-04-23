@@ -32,8 +32,16 @@ public class UIManager : MonoBehaviour
     public bool clampHoverPanelToCanvas = true;
 
     [Header("Result Panels (GameScene)")]
-    public GameObject resultPanel1; // Drink 1 Result Panel
-    public GameObject resultPanel2; // Drink 2 Result Panel
+    public GameObject resultPanel1;
+    public GameObject resultPanel2;
+
+    [Header("Transition Animations - Drink 1")]
+    [Tooltip("第一轮调酒的动画游戏物体数组")]
+    public GameObject[] drink1StepTransitionPanels = new GameObject[11];
+
+    [Header("Transition Animations - Drink 2")]
+    [Tooltip("第二轮调酒的动画游戏物体数组")]
+    public GameObject[] drink2StepTransitionPanels = new GameObject[11];
 
     [Header("Drink 1 Dialogue Lines")]
     [TextArea(2, 4)]
@@ -71,7 +79,6 @@ public class UIManager : MonoBehaviour
     public TextMeshProUGUI resultText;
     public TextMeshProUGUI detailText;
 
-    // ===== Active correct answers (used by IsSelectionCorrectForStep) =====
     [Header("Step Correct Answers (Active Set) - by Item Name")]
     public string correctGlassItemName;
     public bool allowNoSelectionAsCorrect_Glass;
@@ -88,7 +95,6 @@ public class UIManager : MonoBehaviour
     public string correctDecorationItemName;
     public bool allowNoSelectionAsCorrect_Decoration;
 
-    // ===== Drink 1 correct answers =====
     [Header("Drink 1 Correct Answers - by Item Name")]
     public string drink1_correctGlassItemName;
     public bool drink1_allowNoSelectionAsCorrect_Glass;
@@ -101,7 +107,6 @@ public class UIManager : MonoBehaviour
     public string drink1_correctDecorationItemName;
     public bool drink1_allowNoSelectionAsCorrect_Decoration;
 
-    // ===== Drink 2 correct answers =====
     [Header("Drink 2 Correct Answers - by Item Name")]
     public string drink2_correctGlassItemName;
     public bool drink2_allowNoSelectionAsCorrect_Glass;
@@ -116,11 +121,9 @@ public class UIManager : MonoBehaviour
 
     private readonly List<ItemButton> _spawnedItemButtons = new List<ItemButton>();
 
-    // Hover-follow cached refs
     private Canvas _rootCanvas;
     private RectTransform _hoverRect;
 
-    // Shake minigame state
     private bool _shakeRunning;
     private float _shakeAccumulatedLength;
     private Vector2 _shakeLastMouseScreenPos;
@@ -137,6 +140,22 @@ public class UIManager : MonoBehaviour
         if (shakeMiniGamePanel != null) shakeMiniGamePanel.SetActive(false);
         if (resultPanel1 != null) resultPanel1.SetActive(false);
         if (resultPanel2 != null) resultPanel2.SetActive(false);
+
+        if (drink1StepTransitionPanels != null)
+        {
+            foreach (var panel in drink1StepTransitionPanels)
+            {
+                if (panel != null) panel.SetActive(false);
+            }
+        }
+
+        if (drink2StepTransitionPanels != null)
+        {
+            foreach (var panel in drink2StepTransitionPanels)
+            {
+                if (panel != null) panel.SetActive(false);
+            }
+        }
 
         if (dialogueController != null)
             dialogueController.gameObject.SetActive(true);
@@ -164,7 +183,49 @@ public class UIManager : MonoBehaviour
         UpdateShakeMiniGame();
     }
 
-    // ===== Result Panel =====
+    public void ShowTransitionAnimation(int targetStep, float duration, System.Action onComplete)
+    {
+        StartCoroutine(CoShowTransition(targetStep, duration, onComplete));
+    }
+
+    private IEnumerator CoShowTransition(int targetStep, float duration, System.Action onComplete)
+    {
+        ClearAllItemButtons(itemButtonParent);
+        HideItemHoverInfo();
+        SetNextButtonVisible(false);
+        if (additiveProcessPanel != null) additiveProcessPanel.SetActive(false);
+        if (shakeMiniGamePanel != null) shakeMiniGamePanel.SetActive(false);
+
+        GameObject activeTransition = null;
+
+        // 根据当前的 drinkIndex 选择对应的动画数组
+        int drinkIndex = BartenderGameData.Instance != null ? BartenderGameData.Instance.drinkIndex : 0;
+        GameObject[] currentPanels = drinkIndex == 0 ? drink1StepTransitionPanels : drink2StepTransitionPanels;
+
+        // 获取对应的过渡面板
+        if (currentPanels != null && targetStep >= 0 && targetStep < currentPanels.Length)
+        {
+            activeTransition = currentPanels[targetStep];
+        }
+
+        // 如果当前步骤没有配置动画物体，直接进入下一步并跳出协程
+        if (activeTransition == null)
+        {
+            onComplete?.Invoke();
+            yield break;
+        }
+
+        // 否则正常播放动画
+        activeTransition.SetActive(true);
+        activeTransition.transform.SetAsLastSibling();
+
+        // 确保最少等待0.1秒防止卡死
+        yield return new WaitForSeconds(Mathf.Max(duration, 0.1f));
+
+        if (activeTransition != null) activeTransition.SetActive(false);
+        onComplete?.Invoke();
+    }
+
     public void ShowResultPanelForSeconds(float seconds, System.Action onDone)
     {
         StartCoroutine(CoShowResultPanel(seconds, onDone));
@@ -186,7 +247,6 @@ public class UIManager : MonoBehaviour
         onDone?.Invoke();
     }
 
-    // ===== Drink config switching =====
     private void ApplyCorrectConfigForCurrentDrink()
     {
         int idx = BartenderGameData.Instance != null ? BartenderGameData.Instance.drinkIndex : 0;
@@ -233,7 +293,6 @@ public class UIManager : MonoBehaviour
         return idx == 0 ? (drink1DialogueLines ?? new string[0]) : (drink2DialogueLines ?? new string[0]);
     }
 
-    // ===== Existing public APIs =====
     public void SetNextButtonVisible(bool visible)
     {
         if (nextButton != null)
@@ -336,7 +395,6 @@ public class UIManager : MonoBehaviour
             UpdateStepUI(BartenderGameData.Instance.currentStep);
     }
 
-    // NOTE: StartDialogue now uses per-drink dialogue + per-drink correct config
     public void StartDialogue(System.Action onFinished)
     {
         ClearAllItemButtons(itemButtonParent);
@@ -364,7 +422,6 @@ public class UIManager : MonoBehaviour
         if (additiveProcessPanel != null) additiveProcessPanel.SetActive(false);
         if (magicProcessPanel != null) magicProcessPanel.SetActive(false);
 
-        // 只在非第8步时隐藏 shake 面板并重置状态
         if (step != 8)
         {
             if (shakeMiniGamePanel != null) shakeMiniGamePanel.SetActive(false);
@@ -414,7 +471,6 @@ public class UIManager : MonoBehaviour
                 GenerateItemButtons(items, itemButtonParent);
                 break;
             case 8:
-                // 启动 shake 小游戏，完成后通知 GameManager 进入下一步
                 StartShakeMiniGame(() =>
                 {
                     if (GameManager.Instance != null)
@@ -430,7 +486,6 @@ public class UIManager : MonoBehaviour
         UpdateSelectionVisual(null);
     }
 
-    // Step 6: Show Additive Process Panel with 3 fixed buttons
     public void ShowAdditiveProcessPanel()
     {
         ClearAllItemButtons(itemButtonParent);
@@ -452,21 +507,12 @@ public class UIManager : MonoBehaviour
             {
                 if (index == correctAdditiveProcessIndex)
                 {
-                    ItemData processItem = (additiveProcessItems != null && index < additiveProcessItems.Length)
-                        ? additiveProcessItems[index]
-                        : null;
-
-                    if (processItem == null)
-                    {
-                        SpawnErrorImage();
-                        return;
-                    }
-
-                    GameManager.Instance.SelectItem(processItem);
+                    if (GameManager.Instance != null && index < additiveProcessItems.Length)
+                        GameManager.Instance.SelectItem(additiveProcessItems[index]);
                 }
                 else
                 {
-                    SpawnErrorImage();
+                    ShowWrongSelectionPopup();
                 }
             });
         }
@@ -549,7 +595,6 @@ public class UIManager : MonoBehaviour
         cb?.Invoke();
     }
 
-    // legacy UI (not used by shake minigame flow)
     public void ShowMagicProcessPanel()
     {
         ClearAllItemButtons(itemButtonParent);
@@ -658,8 +703,6 @@ public class UIManager : MonoBehaviour
 
     private void InitResultUI()
     {
-        // Using flow=2: resultPanel in GameScene is used. ResultScene can be ignored.
-        // Keep empty to avoid referencing removed fields.
     }
 
     public void OnRestartButtonClicked()
