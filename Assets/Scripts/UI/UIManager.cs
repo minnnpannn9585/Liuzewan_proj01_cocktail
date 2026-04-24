@@ -326,6 +326,11 @@ public class UIManager : MonoBehaviour
 
     public void ShowWrongSelectionPopup()
     {
+        if (SfxManager.Instance != null)
+        {
+            SfxManager.Instance.PlayErrorSfx();
+        }
+            
         SpawnErrorImage();
     }
 

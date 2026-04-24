@@ -124,6 +124,9 @@ public class GameManager : MonoBehaviour
 
     public void OnNextButtonClicked()
     {
+        if (SfxManager.Instance != null)
+            SfxManager.Instance.PlayNextButtonSfx();
+        
         int step = BartenderGameData.Instance.currentStep;
         ItemData selected = BartenderGameData.Instance.tempSelectedItem;
 
@@ -174,6 +177,8 @@ public class GameManager : MonoBehaviour
 
             case 8:
                 BartenderGameData.Instance.currentCocktail.RecordStep(6, "摇晃调制完成");
+                if (SfxManager.Instance != null)
+                    SfxManager.Instance.PlayPouringSfx();
                 TransitionToStep(9);
                 break;
 
@@ -209,6 +214,9 @@ public class GameManager : MonoBehaviour
 
     private void HandleGlassSelection(ItemData glass)
     {
+        if (SfxManager.Instance != null)
+            SfxManager.Instance.PlayIceDropSfx();
+        
         BartenderGameData.Instance.currentCocktail.AddItemAttributes(glass);
         BartenderGameData.Instance.currentCocktail.RecordStep(1, $"选择杯子：{glass.itemName}");
         TransitionToStep(4);
