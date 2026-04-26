@@ -17,6 +17,13 @@ public class UIManager : MonoBehaviour
     public Transform itemButtonParent;
     public GameObject itemButtonPrefab;
 
+    [Header("Prompt Text")]
+    public TextMeshProUGUI promptText; // 用于显示提示词的TMP组件
+    [Tooltip("第一杯酒的提示词列表")]
+    public List<string> drink1Prompts; // 第一杯酒的提示词列表
+    [Tooltip("第二杯酒的提示词列表")]
+    public List<string> drink2Prompts; // 第二杯酒的提示词列表
+
     [Header("Step Control UI")]
     public Button nextButton;
 
@@ -72,7 +79,7 @@ public class UIManager : MonoBehaviour
 
     [Header("Popup Panels")]
     public GameObject additiveProcessPanel;
-    
+
     [Header("Additive Process Sub-Panels")]
     [Tooltip("第一轮展示的子物体")]
     public GameObject additiveProcessDrink1Child;
@@ -246,6 +253,8 @@ public class UIManager : MonoBehaviour
 
     private IEnumerator CoShowResultPanelAndWaitForClick(System.Action onDone)
     {
+        if (promptText != null) promptText.text = string.Empty;
+
         GameObject activeResultPanel = null;
         if (BartenderGameData.Instance != null)
         {
@@ -256,7 +265,7 @@ public class UIManager : MonoBehaviour
 
         // 等待一帧以防止误判之前触发步骤的点击
         yield return null;
-        
+
         // 等待鼠标左键点击
         yield return new WaitUntil(() => Input.GetMouseButtonDown(0));
 
@@ -266,6 +275,8 @@ public class UIManager : MonoBehaviour
 
     public void ShowFinalPanel()
     {
+        if (promptText != null) promptText.text = string.Empty;
+
         if (finalPanel != null)
         {
             finalPanel.SetActive(true);
@@ -345,7 +356,7 @@ public class UIManager : MonoBehaviour
         {
             SfxManager.Instance.PlayErrorSfx();
         }
-            
+
         SpawnErrorImage();
     }
 
@@ -514,6 +525,22 @@ public class UIManager : MonoBehaviour
         }
 
         UpdateSelectionVisual(null);
+        UpdatePromptText(step);
+    }
+
+    private void UpdatePromptText(int step)
+    {
+        int drinkIndex = BartenderGameData.Instance != null ? BartenderGameData.Instance.drinkIndex : 0;
+        List<string> currentPrompts = drinkIndex == 0 ? drink1Prompts : drink2Prompts;
+
+        if (promptText != null && currentPrompts != null && step >= 0 && step < currentPrompts.Count)
+        {
+            promptText.text = currentPrompts[step];
+        }
+        else if (promptText != null)
+        {
+            promptText.text = string.Empty; // 如果没有提示词，清空显示
+        }
     }
 
     public void ShowAdditiveProcessPanel()
