@@ -34,6 +34,8 @@ public class UIManager : MonoBehaviour
     [Header("Result Panels (GameScene)")]
     public GameObject resultPanel1;
     public GameObject resultPanel2;
+    [Tooltip("游戏完全结束时展示的最终面板")]
+    public GameObject finalPanel;
 
     [Header("Transition Animations - Drink 1")]
     [Tooltip("第一轮调酒的动画游戏物体数组")]
@@ -155,6 +157,7 @@ public class UIManager : MonoBehaviour
         if (shakeMiniGamePanel != null) shakeMiniGamePanel.SetActive(false);
         if (resultPanel1 != null) resultPanel1.SetActive(false);
         if (resultPanel2 != null) resultPanel2.SetActive(false);
+        if (finalPanel != null) finalPanel.SetActive(false);
 
         if (drink1StepTransitionPanels != null)
         {
@@ -236,12 +239,12 @@ public class UIManager : MonoBehaviour
         onComplete?.Invoke();
     }
 
-    public void ShowResultPanelForSeconds(float seconds, System.Action onDone)
+    public void ShowResultPanelAndWaitForClick(System.Action onDone)
     {
-        StartCoroutine(CoShowResultPanel(seconds, onDone));
+        StartCoroutine(CoShowResultPanelAndWaitForClick(onDone));
     }
 
-    private IEnumerator CoShowResultPanel(float seconds, System.Action onDone)
+    private IEnumerator CoShowResultPanelAndWaitForClick(System.Action onDone)
     {
         GameObject activeResultPanel = null;
         if (BartenderGameData.Instance != null)
@@ -251,10 +254,22 @@ public class UIManager : MonoBehaviour
 
         if (activeResultPanel != null) activeResultPanel.SetActive(true);
 
-        yield return new WaitForSeconds(seconds);
+        // 等待一帧以防止误判之前触发步骤的点击
+        yield return null;
+        
+        // 等待鼠标左键点击
+        yield return new WaitUntil(() => Input.GetMouseButtonDown(0));
 
         if (activeResultPanel != null) activeResultPanel.SetActive(false);
         onDone?.Invoke();
+    }
+
+    public void ShowFinalPanel()
+    {
+        if (finalPanel != null)
+        {
+            finalPanel.SetActive(true);
+        }
     }
 
     private void ApplyCorrectConfigForCurrentDrink()
@@ -596,8 +611,6 @@ public class UIManager : MonoBehaviour
         if (_shakeAccumulatedLength >= shakeRequiredPathLength)
             EndShakeMiniGame();
     }
-
-    
 
     private void UpdateShakeGlassPosition(Vector2 mouseScreenPos)
     {

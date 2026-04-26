@@ -126,7 +126,7 @@ public class GameManager : MonoBehaviour
     {
         if (SfxManager.Instance != null)
             SfxManager.Instance.PlayNextButtonSfx();
-        
+
         int step = BartenderGameData.Instance.currentStep;
         ItemData selected = BartenderGameData.Instance.tempSelectedItem;
 
@@ -216,7 +216,7 @@ public class GameManager : MonoBehaviour
     {
         if (SfxManager.Instance != null)
             SfxManager.Instance.PlayIceDropSfx();
-        
+
         BartenderGameData.Instance.currentCocktail.AddItemAttributes(glass);
         BartenderGameData.Instance.currentCocktail.RecordStep(1, $"选择杯子：{glass.itemName}");
         TransitionToStep(4);
@@ -256,7 +256,7 @@ public class GameManager : MonoBehaviour
 
         BartenderGameData.Instance.tempSelectedAdditive = null;
         BartenderGameData.Instance.tempSelectedItem = null;
-        
+
         TransitionToStep(7);
     }
 
@@ -291,7 +291,7 @@ public class GameManager : MonoBehaviour
 
     private void ShowResultAndContinue()
     {
-        UIManager.Instance.ShowResultPanelForSeconds(5f, () =>
+        UIManager.Instance.ShowResultPanelAndWaitForClick(() =>
         {
             if (BartenderGameData.Instance.drinkIndex == 0)
             {
@@ -300,7 +300,11 @@ public class GameManager : MonoBehaviour
             }
             else
             {
-                BackToStart();
+                // 第二轮结束后显示Final Panel而不是返回主菜单
+                if (UIManager.Instance != null)
+                {
+                    UIManager.Instance.ShowFinalPanel();
+                }
             }
         });
     }

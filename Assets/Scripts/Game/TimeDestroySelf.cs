@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class TimeDestroySelf : MonoBehaviour
 {
-    float timer = 2.05f;
+    public float timer = 2.05f;
     
     void Update()
     {
